@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33424.131
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.Api", "Backend.Api\Backend.Api.csproj", "{DA5B7D64-BBD0-4056-92A5-3EB9BD6D51D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.DataAccess", "Backend.DataAccess\Backend.DataAccess.csproj", "{FA034089-F438-4167-98AB-11C78CC5F141}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA5B7D64-BBD0-4056-92A5-3EB9BD6D51D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA5B7D64-BBD0-4056-92A5-3EB9BD6D51D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA5B7D64-BBD0-4056-92A5-3EB9BD6D51D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA5B7D64-BBD0-4056-92A5-3EB9BD6D51D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA034089-F438-4167-98AB-11C78CC5F141}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA034089-F438-4167-98AB-11C78CC5F141}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA034089-F438-4167-98AB-11C78CC5F141}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA034089-F438-4167-98AB-11C78CC5F141}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EB7D96C1-5B7F-4C66-B7D3-0758511C1634}
+	EndGlobalSection
+EndGlobal
