@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace Backend.DataAccess.Entities
 {
-    internal class UserFollower
+    public class UserFollower
     {
+        public int UserId { get; set; }
+        public int FollowerId { get; set; }
+        public User User { get; set; }
+        public User Follower { get; set; }
     }
 }
