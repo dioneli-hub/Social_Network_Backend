@@ -13,6 +13,6 @@ namespace Backend.DataAccess.Entities
         public DateTimeOffset LikedAt { get; set; }
 
         public Post Post { get; set; }
-        // in the future user id and user
+        //in the future author Id and author????
     }
 }
