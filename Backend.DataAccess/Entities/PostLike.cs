@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace Backend.DataAccess.Entities
 {
-    internal class PostLike
+    public class PostLike
     {
+        public int Id { get; set; }
+        public int PostId { get; set; }
+        public DateTimeOffset LikedAt { get; set; }
+
+        public Post Post { get; set; }
+        // in the future user id and user
     }
 }
