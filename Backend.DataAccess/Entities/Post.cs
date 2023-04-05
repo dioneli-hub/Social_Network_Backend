@@ -10,7 +10,7 @@ namespace Backend.DataAccess.Entities
     {
         public int Id { get; set; }
         public string Text { get; set; }
-        public int AuthorId { get; set; }
+        //public int AuthorId { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
 
         public ICollection<PostLike> Likes { get; set; }

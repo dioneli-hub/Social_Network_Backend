@@ -24,5 +24,7 @@ namespace Backend.DataAccess.Configurations
             // add when ef ready
             // builder.ToTable("Posts");
         }
+
+
     }
 }
