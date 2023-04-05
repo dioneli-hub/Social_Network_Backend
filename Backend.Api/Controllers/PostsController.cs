@@ -1,4 +1,5 @@
-﻿using Backend.Api.ApiModels;
+﻿using AutoMapper;
+using Backend.Api.ApiModels;
 using Backend.DataAccess;
 using Backend.DataAccess.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace Backend.Api.Controllers
     public class PostsController : ControllerBase
     {
         private readonly DatabaseContext _database;
+        private readonly IMapper _mapper;
 
-        public PostsController(DatabaseContext database)
+        public PostsController(DatabaseContext database, IMapper mapper)
         {
             _database = database;
+            _mapper = mapper;
         }
 
         [HttpPost(Name = nameof(CreatePost))]
@@ -104,7 +107,7 @@ namespace Backend.Api.Controllers
                 // later include the author
                 .First();
 
-            return Ok(comment); //maybe modify???
+            return Ok(_mapper.Map<PostCommentModel>(comment)); //maybe modify???
         }
 
 
