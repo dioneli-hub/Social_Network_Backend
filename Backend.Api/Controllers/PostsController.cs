@@ -46,6 +46,26 @@ namespace Backend.Api.Controllers
             return post != null ? Ok(post) : NotFound();
         }
 
-        
+        [HttpDelete("{postId}", Name = nameof(RemovePost))]
+        public ActionResult RemovePost(int postId)
+        {
+            var post = _database.Posts
+                .Include(x => x.Comments)
+                .Include(x => x.Likes)
+                .FirstOrDefault(x => x.Id == postId);
+            if (post == null)
+            {
+                return NotFound();
+            }
+
+            _database.PostComments.RemoveRange(post.Comments);
+            _database.PostLikes.RemoveRange(post.Likes);
+            _database.Posts.Remove(post);
+            _database.SaveChanges();
+
+            return Ok();
+        }
+
+
     }
 }

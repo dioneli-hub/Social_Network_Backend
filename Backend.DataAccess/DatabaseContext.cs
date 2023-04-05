@@ -16,23 +16,6 @@ namespace Backend.DataAccess
             base.OnModelCreating(modelBuilder);
 
             new PostConfiguration().Configure(modelBuilder.Entity<Post>());
-            /*modelBuilder.Entity<Post>().HasData(
-                new Post
-                {
-                    Id = 1,
-                    Text = "ueudhed",
-                    CreatedAt = new DateTimeOffset(2008, 5, 1, 8, 6, 32, new TimeSpan(1, 0, 0))
-                },
-
-                new Post
-                {
-                    Id = 2,
-                    Text = "ueudhedndnddd",
-                    CreatedAt = new DateTimeOffset(2008, 5, 1, 8, 6, 32, new TimeSpan(1, 0, 0))
-                }); */
-
-
-
             new PostCommentConfiguration().Configure(modelBuilder.Entity<PostComment>());
             new PostLikeConfiguration().Configure(modelBuilder.Entity<PostLike>());
 
