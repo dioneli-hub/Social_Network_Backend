@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.DataAccess.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20230405181023_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20230408072455_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -91,6 +91,49 @@ namespace Backend.DataAccess.Migrations
                     b.ToTable("PostLikes");
                 });
 
+            modelBuilder.Entity("Backend.DataAccess.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.DataAccess.Entities.UserFollower", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FollowerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "FollowerId");
+
+                    b.HasIndex("FollowerId");
+
+                    b.ToTable("UserFollowers", (string)null);
+                });
+
             modelBuilder.Entity("Backend.DataAccess.Entities.PostComment", b =>
                 {
                     b.HasOne("Backend.DataAccess.Entities.Post", "Post")
@@ -113,11 +156,37 @@ namespace Backend.DataAccess.Migrations
                     b.Navigation("Post");
                 });
 
+            modelBuilder.Entity("Backend.DataAccess.Entities.UserFollower", b =>
+                {
+                    b.HasOne("Backend.DataAccess.Entities.User", "Follower")
+                        .WithMany("UserFollowsTo")
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Backend.DataAccess.Entities.User", "User")
+                        .WithMany("UserFollowers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Follower");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Backend.DataAccess.Entities.Post", b =>
                 {
                     b.Navigation("Comments");
 
                     b.Navigation("Likes");
+                });
+
+            modelBuilder.Entity("Backend.DataAccess.Entities.User", b =>
+                {
+                    b.Navigation("UserFollowers");
+
+                    b.Navigation("UserFollowsTo");
                 });
 #pragma warning restore 612, 618
         }
