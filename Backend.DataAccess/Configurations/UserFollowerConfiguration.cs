@@ -11,21 +11,25 @@ namespace Backend.DataAccess.Configurations
 {
     public class UserFollowerConfiguration : IEntityTypeConfiguration<UserFollower>
     {
-        public void Configure(EntityTypeBuilder<UserFollower> builder) 
+        public void Configure(EntityTypeBuilder<UserFollower> builder)
         {
-            builder.HasKey(x => new 
-            { 
-                x.UserId, 
-                x.FollowerId 
+            builder.HasKey(x => new
+            {
+                x.UserId,
+                x.FollowerId
             });
 
             builder.HasOne(x => x.User)
                 .WithMany(x => x.UserFollowers)
-                .HasForeignKey(x => x.UserId);
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             builder.HasOne(x => x.Follower)
                 .WithMany(x => x.UserFollowsTo)
-                .HasForeignKey(x => x.FollowerId);
+                .HasForeignKey(x => x.FollowerId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.ToTable("UserFollowers");
         }
     }
 }

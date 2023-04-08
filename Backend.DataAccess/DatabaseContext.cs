@@ -18,15 +18,14 @@ namespace Backend.DataAccess
             new PostConfiguration().Configure(modelBuilder.Entity<Post>());
             new PostCommentConfiguration().Configure(modelBuilder.Entity<PostComment>());
             new PostLikeConfiguration().Configure(modelBuilder.Entity<PostLike>());
-
-            //new UserConfiguration().Configure(modelBuilder.Entity<User>());
-            //new UserFollowerConfiguration().Configure(modelBuilder.Entity<UserFollower>());
+            new UserConfiguration().Configure(modelBuilder.Entity<User>());
+            new UserFollowerConfiguration().Configure(modelBuilder.Entity<UserFollower>());
             //new ApplicationFileConfiguration().Configure(modelBuilder.Entity<ApplicationFile>());
 
         }
 
-        //public DbSet<User> Users { get; set; }
-        //public DbSet<UserFollower> UserFollowers { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<UserFollower> UserFollowers { get; set; }
         //public DbSet<ApplicationFile> ApplicationFIles { get; set; }
         public DbSet<PostLike> PostLikes { get; set; }
         public DbSet<PostComment> PostComments { get; set; }
