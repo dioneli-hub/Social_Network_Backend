@@ -8,5 +8,10 @@ namespace Backend.DataAccess.Entities
 {
     internal class ApplicationFile
     {
+        public int Id { get; set; }
+        public string ContentType { get; set; }
+        public byte[] Content { get; set; }
+        public string FileName { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
     }
 }
