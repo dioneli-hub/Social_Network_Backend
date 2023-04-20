@@ -5,10 +5,6 @@ using Backend.DataAccess;
 
 namespace Backend.Api.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class FileController : ControllerBase
-    {
         [ApiController]
         [Route("api/[controller]")]
 
@@ -36,4 +32,3 @@ namespace Backend.Api.Controllers
             }
         }
     }
-}

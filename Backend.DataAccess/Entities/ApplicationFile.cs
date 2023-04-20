@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Backend.DataAccess.Entities
 {
-    internal class ApplicationFile
+    public class ApplicationFile
     {
         public int Id { get; set; }
         public string ContentType { get; set; }

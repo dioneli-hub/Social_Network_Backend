@@ -20,13 +20,13 @@ namespace Backend.DataAccess
             new PostLikeConfiguration().Configure(modelBuilder.Entity<PostLike>());
             new UserConfiguration().Configure(modelBuilder.Entity<User>());
             new UserFollowerConfiguration().Configure(modelBuilder.Entity<UserFollower>());
-            //new ApplicationFileConfiguration().Configure(modelBuilder.Entity<ApplicationFile>());
+            new ApplicationFileConfiguration().Configure(modelBuilder.Entity<ApplicationFile>());
 
         }
 
         public DbSet<User> Users { get; set; }
         public DbSet<UserFollower> UserFollowers { get; set; }
-        //public DbSet<ApplicationFile> ApplicationFIles { get; set; }
+        public DbSet<ApplicationFile> ApplicationFiles { get; set; }
         public DbSet<PostLike> PostLikes { get; set; }
         public DbSet<PostComment> PostComments { get; set; }
         public DbSet<Post> Posts { get; set; }
