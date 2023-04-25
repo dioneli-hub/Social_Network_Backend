@@ -10,9 +10,11 @@ namespace Backend.DataAccess.Entities
     {
         public int Id { get; set; }
         public int PostId { get; set; }
+        public int UserId { get; set; }
         public DateTimeOffset LikedAt { get; set; }
 
         public Post Post { get; set; }
-        //in the future author Id and author????
+        public User User { get; set; }
+
     }
 }
