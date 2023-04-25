@@ -19,10 +19,11 @@ namespace Backend.DataAccess.Configurations
             builder.Property(x => x.Text).IsRequired();
             builder.Property(x => x.CreatedAt).IsRequired();
 
-            // in the future add hasone author with many posts, fk author id ???
-            
-            // add when ef ready
-            // builder.ToTable("Posts");
+            builder.HasOne(x => x.Author)
+                .WithMany(x => x.Posts)
+                .HasForeignKey(x => x.AuthorId);
+
+            builder.ToTable("Posts");
         }
 
 

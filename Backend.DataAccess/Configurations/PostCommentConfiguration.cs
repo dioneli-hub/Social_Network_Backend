@@ -19,15 +19,15 @@ namespace Backend.DataAccess.Configurations
             builder.Property(x => x.Text).IsRequired();
             builder.Property(x => x.CreatedAt).IsRequired();
 
-            
+            builder.HasOne(x => x.Author)
+                .WithMany()
+                .HasForeignKey(x => x.AuthorId);
+
             builder.HasOne(x => x.Post)
                 .WithMany(x => x.Comments)
                 .HasForeignKey(x => x.PostId);
 
-            // in the future add hasone author with many posts, fk author id ???
-
-            // add when ef ready
-            //builder.ToTable("PostComments");
+            builder.ToTable("PostComments");
         }
     }
 }

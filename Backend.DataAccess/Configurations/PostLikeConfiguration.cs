@@ -21,11 +21,11 @@ namespace Backend.DataAccess.Configurations
             builder.HasOne(x => x.Post)
                 .WithMany(x => x.Likes)
                 .HasForeignKey(x => x.PostId);
+            builder.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId);
 
-            // in the future add hasone author with many posts, fk author id ???
-
-            // add when ef ready
-            //builder.ToTable("PostLikes");
+            builder.ToTable("PostLikes");
         }
     }
 }
