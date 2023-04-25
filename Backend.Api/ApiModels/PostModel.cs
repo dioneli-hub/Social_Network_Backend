@@ -7,6 +7,6 @@
         public DateTimeOffset CreatedAt { get; set; }
         public int TotalLikes { get; set; }
         public int TotalComments { get; set; }
-        // info about the author
+        public SimpleUserModel Author { get; set; } 
     }
 }

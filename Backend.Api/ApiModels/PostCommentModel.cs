@@ -5,7 +5,7 @@
         public int Id { get; set; }
         public string Text { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
-
-        // info about author
+        public SimpleUserModel Author { get; set; }
+        
     }
 }

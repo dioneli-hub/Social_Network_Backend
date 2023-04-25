@@ -20,6 +20,12 @@ namespace Backend.DataAccess.Configurations
             builder.Property(x => x.LastName).IsRequired();
             builder.Property(x => x.Email).IsRequired();
             builder.Property(x => x.CreatedAt).IsRequired();
+            builder.Property(x => x.PasswordHash).IsRequired();
+            builder.Property(x => x.SaltHash).IsRequired();
+
+            builder.HasOne(x => x.Avatar)
+                .WithMany()
+                .HasForeignKey(x => x.AvatarFileId);
 
             builder.ToTable("Users");
         }
