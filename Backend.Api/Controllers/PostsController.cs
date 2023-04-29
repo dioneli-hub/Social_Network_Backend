@@ -4,6 +4,7 @@ using Backend.DataAccess;
 using Backend.DataAccess.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 
 namespace Backend.Api.Controllers
 {
@@ -21,12 +22,31 @@ namespace Backend.Api.Controllers
             _mapper = mapper;
         }
 
+        [HttpGet("news", Name = nameof(GetNews))]
+        public ActionResult<List<PostModel>> GetNews()
+        {
+            var posts = _database.Users
+                .Where(x => x.Id == CurrentUserId)
+                .SelectMany(x => x.UserFollowsTo.SelectMany(f => f.User.Posts))
+                .Union(_database.Posts.Where(x => x.AuthorId == CurrentUserId))
+                .Distinct()
+                .Include(x => x.Author)
+                .ThenInclude(x => x.Avatar)
+                .Include(x => x.Likes)
+                .Include(x => x.Comments)
+                .OrderByDescending(x => x.Id)
+                .ToList();
+
+            return Ok(posts); // add an automapper
+        }
+
         [HttpPost(Name = nameof(CreatePost))]
         public ActionResult<PostModel> CreatePost(CreatePostModel model)
         {
             var post = new Post
             {
                 Text = model.Text,
+                AuthorId = CurrentUserId,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
@@ -41,7 +61,8 @@ namespace Backend.Api.Controllers
 
         {
             var post = _database.Posts
-                //later also the author and his/her avatar will be included
+                .Include(x => x.Author)
+                .ThenInclude(x => x.Avatar)
                 .Include(x => x.Likes)
                 .Include(x => x.Comments)
                 .FirstOrDefault(x => x.Id == postId);
@@ -73,7 +94,7 @@ namespace Backend.Api.Controllers
         public ActionResult<List<PostCommentModel>> GetPostComments(int postId)
         {
             var comments = _database.PostComments
-                // later we will also include the author (as son as create one)
+                .Include(x => x.Author)
                 .Where(x => x.PostId == postId)
                 .OrderBy(x => x.Id)
                 .ToList();
@@ -95,16 +116,16 @@ namespace Backend.Api.Controllers
 
             var comment = new PostComment
             {
+                AuthorId = CurrentUserId,
                 PostId = postId,
                 Text = model.Text,
                 CreatedAt = DateTimeOffset.UtcNow
-                // do not forget to set the author to the current user
             };
             _database.PostComments.Add(comment);
             _database.SaveChanges();
 
             comment = _database.PostComments.Where(x => x.Id == comment.Id)
-                // later include the author
+                .Include(x => x.Author)
                 .First();
 
             return Ok(_mapper.Map<PostCommentModel>(comment)); //maybe modify???
@@ -120,8 +141,7 @@ namespace Backend.Api.Controllers
                 return NotFound();
             }
 
-            if (comment.PostId != postId) 
-                // later will add validation such that only the author of the comment will be able to delete it
+            if (comment.PostId != postId || comment.AuthorId != CurrentUserId) 
             {
                 return Forbid();
             }
@@ -136,7 +156,7 @@ namespace Backend.Api.Controllers
         public ActionResult<List<PostCommentModel>> GetPostLikes(int postId)
         {
             var likes = _database.PostLikes
-                // include info about the author
+                .Include(x => x.User)
                 .Where(x => x.Id == postId)
                 .ToList();
             return Ok(likes); // change via automapper
@@ -151,15 +171,12 @@ namespace Backend.Api.Controllers
                 return NotFound();
             }
 
-            var like = _database.PostLikes.FirstOrDefault(x => x.PostId == postId);
-            // add validation: check if there is already a like put by the current user
-
-
+            var like = _database.PostLikes.FirstOrDefault(x => x.PostId == postId && x.UserId == CurrentUserId);
             if (like == null)
             {
                 like = new PostLike
                 {
-                    // set the author to the current user
+                    UserId = CurrentUserId,
                     PostId = postId,
                     LikedAt = DateTimeOffset.UtcNow
                 };
@@ -168,8 +185,8 @@ namespace Backend.Api.Controllers
             }
 
             like = _database.PostLikes
-                // include info about the author
-                .FirstOrDefault(x => x.PostId == postId ); // and the author is the current user
+                .Include(x => x.User) 
+                .FirstOrDefault(x => x.PostId == postId && x.UserId == CurrentUserId);
 
             return Ok(like); //later we'll map with automapper
         }
@@ -177,8 +194,7 @@ namespace Backend.Api.Controllers
         [HttpDelete("{postId}/likes", Name = nameof(RemoveLikeFromPost))]
         public ActionResult RemoveLikeFromPost(int postId)
         {
-            var like = _database.PostLikes.FirstOrDefault(x => x.PostId == postId ); 
-            //check if there exists the like put by the current user (so that noone else could delete it)
+            var like = _database.PostLikes.FirstOrDefault(x => x.PostId == postId && x.UserId == CurrentUserId);
 
             if (like == null)
             {
@@ -189,6 +205,15 @@ namespace Backend.Api.Controllers
             _database.SaveChanges();
 
             return Ok();
+        }
+
+        public int CurrentUserId
+        {
+            get
+            {
+                var nameClaim = HttpContext.User.Identity.Name;
+                return int.Parse( nameClaim );
+            }
         }
 
 

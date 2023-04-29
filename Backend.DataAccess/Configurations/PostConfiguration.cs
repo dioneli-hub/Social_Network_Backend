@@ -21,7 +21,8 @@ namespace Backend.DataAccess.Configurations
 
             builder.HasOne(x => x.Author)
                 .WithMany(x => x.Posts)
-                .HasForeignKey(x => x.AuthorId);
+                .HasForeignKey(x => x.AuthorId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             builder.ToTable("Posts");
         }

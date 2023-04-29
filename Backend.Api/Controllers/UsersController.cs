@@ -29,7 +29,7 @@ namespace Backend.Api.Controllers
         public ActionResult<List<SimpleUserModel>> GetAllUsers()
         {
             var users = _database.Users
-                //Will need to include avatar as well
+                .Include(x => x.Avatar)
                 .ToList();
             return Ok(users.ToList()); //Mapper!
         }
@@ -38,8 +38,8 @@ namespace Backend.Api.Controllers
         public ActionResult<UserModel> GetUserById(int userId)
         {
             var user = _database.Users
-               //Avatar!
-
+               
+                .Include(x => x.Avatar)
                 //when mapper is included, add the following
                //.Include(x => x.UserFollowers)
                //.Include(x => x.UserFollowsTo)
@@ -70,7 +70,8 @@ namespace Backend.Api.Controllers
         public ActionResult<PostModel> GetUserPosts(int userId)
         {
             var posts = _database.Posts
-               //Will need to add Author and Avatar info
+                .Include(x => x.Author)
+                .ThenInclude(x => x.Avatar)
                 .Include(x => x.Likes)
                 .Include(x => x.Comments)
                 .ToList();
@@ -81,7 +82,8 @@ namespace Backend.Api.Controllers
         public ActionResult<List<SimpleUserModel>> GetUserFollowers(int userId, int? limit)
         {
             var usersQuery = _database.UserFollowers
-                .Include(x => x.User) // + Avatar
+                .Include(x => x.User)
+                .ThenInclude(x => x.Avatar)
                 .Where(x => x.UserId == userId)
                 .Select(x => x.Follower)
                 .AsQueryable();
@@ -100,7 +102,8 @@ namespace Backend.Api.Controllers
         public async Task<ActionResult<List<SimpleUserModel>>> GetUserFollowsTo(int userId, int? limit)
         {
             var usersQuery = _database.UserFollowers
-                .Include(x => x.User) //+ Avatar
+                .Include(x => x.User)
+                .ThenInclude(x => x.Avatar)
                 .Where(x => x.FollowerId == userId)
                 .Select(x => x.User)
                 .AsQueryable();
@@ -117,7 +120,10 @@ namespace Backend.Api.Controllers
         [HttpPost("{userId}/follow-to/{followToUserId}", Name = nameof(FollowToUser))]
         public ActionResult FollowToUser(int userId, int followToUserId)
         {
-            //To do: Allow for authenticated users only!
+            if (CurrentUserId != userId)
+            {
+                throw new ApplicationException("Cannot follow as another user.");
+            }
 
             var hasFollow = HasFollow(userId, followToUserId);
             if (!hasFollow)
@@ -170,6 +176,44 @@ namespace Backend.Api.Controllers
             return Ok();
         }
 
-       //To-do: Add UploadAvatar endpoint
+        [HttpPost("avatar", Name = nameof(UploadAvatar))]
+        public async Task<IActionResult> UploadAvatar(IFormFile file)
+        {
+            var user = await _database.Users
+                .Include(x => x.Avatar)
+                .FirstOrDefaultAsync(x => x.Id == CurrentUserId);
+
+            await using var buffer = new MemoryStream();
+            await file.CopyToAsync(buffer);
+
+            var applicationFile = new ApplicationFile
+            {
+                Content = buffer.GetBuffer(),
+                ContentType = file.ContentType,
+                CreatedAt = DateTimeOffset.UtcNow,
+                FileName = file.FileName
+            };
+
+            if (user.Avatar != null)
+            {
+                _database.ApplicationFiles.Remove(user.Avatar);
+                user.AvatarFileId = null;
+            }
+
+            user.Avatar = applicationFile;
+            _database.ApplicationFiles.Add(applicationFile);
+            _database.SaveChanges();
+
+            return Ok(applicationFile);
+        }
+
+        public int CurrentUserId
+        {
+            get
+            {
+                var nameClaim = HttpContext.User.Identity.Name;
+                return int.Parse(nameClaim);
+            }
+        }
     }
 }
