@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
+using Microsoft.Extensions.Hosting;
 
 namespace Backend.Api.Controllers
 {
@@ -24,6 +25,7 @@ namespace Backend.Api.Controllers
             _mapper = mapper;
         }
 
+        [AllowAnonymous] //!!
         [HttpGet("news", Name = nameof(GetNews))]
         public ActionResult<List<PostModel>> GetNews()
         {
@@ -39,7 +41,7 @@ namespace Backend.Api.Controllers
                 .OrderByDescending(x => x.Id)
                 .ToList();
 
-            return Ok(posts); // add an automapper
+            return Ok(_mapper.Map<PostModel>(posts)); // add an automapper
         }
 
         [HttpPost(Name = nameof(CreatePost))]
@@ -55,7 +57,7 @@ namespace Backend.Api.Controllers
             _database.Posts.Add(post);
             _database.SaveChanges();
 
-            return GetPostById(post.Id);
+            return Ok(_mapper.Map<PostModel>(GetPostById(post.Id))); // mapper
         }
 
         [HttpGet("{postId}", Name = nameof(GetPostById))]
@@ -69,7 +71,7 @@ namespace Backend.Api.Controllers
                 .Include(x => x.Comments)
                 .FirstOrDefault(x => x.Id == postId);
 
-            return post != null ? Ok(post) : NotFound();
+            return post != null ? Ok(_mapper.Map<PostModel>(post)) : NotFound(); // mapper
         }
 
         [HttpDelete("{postId}", Name = nameof(RemovePost))]
@@ -101,7 +103,7 @@ namespace Backend.Api.Controllers
                 .OrderBy(x => x.Id)
                 .ToList();
 
-            return Ok(comments.ToList()); // later we'll modify that with mapper
+            return Ok(_mapper.Map<List<PostCommentModel>>(comments)); //  mapper
         }
 
         [HttpPost("{postId}/comments", Name = nameof(AddCommentToPost))]
@@ -155,13 +157,13 @@ namespace Backend.Api.Controllers
         }
 
         [HttpGet("{postId}/likes", Name = nameof(GetPostLikes))]
-        public ActionResult<List<PostCommentModel>> GetPostLikes(int postId)
+        public ActionResult<List<PostLikeModel>> GetPostLikes(int postId)
         {
             var likes = _database.PostLikes
                 .Include(x => x.User)
                 .Where(x => x.Id == postId)
                 .ToList();
-            return Ok(likes); // change via automapper
+            return Ok(_mapper.Map<List<PostLikeModel>>(likes)); // mapper
         }
 
         [HttpPost("{postId}/likes", Name = nameof(AddLikeToPost))]
@@ -190,7 +192,7 @@ namespace Backend.Api.Controllers
                 .Include(x => x.User) 
                 .FirstOrDefault(x => x.PostId == postId && x.UserId == CurrentUserId);
 
-            return Ok(like); //later we'll map with automapper
+            return Ok(_mapper.Map<PostLikeModel>(like)); // automapper check
         }
 
         [HttpDelete("{postId}/likes", Name = nameof(RemoveLikeFromPost))]

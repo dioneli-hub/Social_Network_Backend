@@ -9,6 +9,12 @@ namespace Backend.Api.Infrastructure
         public MappingProfiles()
         {
             CreateMap<PostComment, PostCommentModel>();
+            //CreateMap< List<User>, List<SimpleUserModel>> ();
+            CreateMap<User , SimpleUserModel>();
+            CreateMap<User, UserModel>();
+            CreateMap<Post, PostModel>();
+            CreateMap<PostComment, PostCommentModel>();
+            CreateMap<PostLike, PostLikeModel>();
         }
     }
 }

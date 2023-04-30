@@ -1,4 +1,5 @@
-﻿using Backend.Api.ApiModels;
+﻿using AutoMapper;
+using Backend.Api.ApiModels;
 using Backend.Api.Managers;
 using Backend.DataAccess;
 using Backend.DataAccess.Entities;
@@ -15,10 +16,12 @@ namespace Backend.Api.Controllers
     {
 
         private readonly DatabaseContext _database;
+        private readonly IMapper _mapper;
 
-        public AuthController(DatabaseContext database)
+        public AuthController(DatabaseContext database, IMapper mapper)
         {
             _database = database;
+            _mapper = mapper;
         }
 
         [Authorize]
@@ -31,7 +34,7 @@ namespace Backend.Api.Controllers
                 .Include(x => x.UserFollowsTo)
                 .FirstOrDefault(x => x.Id == CurrentUserId);
 
-            return Ok(user); // Add mapper
+            return Ok(_mapper.Map<UserModel>(user)); //  mapper check
         }
 
         [AllowAnonymous]
