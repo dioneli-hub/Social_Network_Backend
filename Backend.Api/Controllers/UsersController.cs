@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper.Configuration.Annotations;
 using Backend.Api.ApiModels;
+using Backend.Api.Managers;
 using Backend.DataAccess;
 using Backend.DataAccess.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,7 @@ namespace Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly DatabaseContext _database;
@@ -26,6 +28,7 @@ namespace Backend.Api.Controllers
         }
 
         [HttpGet(Name = nameof(GetAllUsers))]
+        [ProducesResponseType(typeof(List<SimpleUserModel>), StatusCodes.Status200OK)]
         public ActionResult<List<SimpleUserModel>> GetAllUsers()
         {
             var users = _database.Users
@@ -48,15 +51,23 @@ namespace Backend.Api.Controllers
         }
 
         [HttpPost(Name = nameof(RegisterUser))]
-        //[AllowAnonymous] Allows the not-authenticated users to register
+        [AllowAnonymous]
         public ActionResult<UserModel> RegisterUser(CreateUserModel model)
         {
-           //Will need to add password functionality
+            var hasAnyByEmail = _database.Users.Any(x => x.Email == model.Email);
+            if (hasAnyByEmail)
+            {
+                return NotFound();
+            }
+
+            var hashModel = HashManager.Generate(model.Password);
             var user = new User
             {
                 FirstName = model.FirstName,
                 LastName = model.LastName,
                 Email = model.Email,
+                PasswordHash = Convert.ToBase64String(hashModel.Hash),
+                SaltHash = Convert.ToBase64String(hashModel.Salt),
                 CreatedAt = DateTimeOffset.UtcNow
             };
 

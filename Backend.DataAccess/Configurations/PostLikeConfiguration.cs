@@ -21,6 +21,7 @@ namespace Backend.DataAccess.Configurations
             builder.HasOne(x => x.Post)
                 .WithMany(x => x.Likes)
                 .HasForeignKey(x => x.PostId);
+
             builder.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId);

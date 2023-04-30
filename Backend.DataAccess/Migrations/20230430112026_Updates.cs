@@ -5,7 +5,7 @@
 namespace Backend.DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class ControllersUpdate : Migration
+    public partial class Updates : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

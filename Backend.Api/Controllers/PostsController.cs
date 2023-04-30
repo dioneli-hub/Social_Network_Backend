@@ -2,6 +2,7 @@
 using Backend.Api.ApiModels;
 using Backend.DataAccess;
 using Backend.DataAccess.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
@@ -10,7 +11,8 @@ namespace Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    
+    [Authorize]
+
     public class PostsController : ControllerBase
     {
         private readonly DatabaseContext _database;
