@@ -20,7 +20,7 @@ namespace Backend.Api.Controllers
         [HttpGet("{fileId}", Name = nameof(GetFileById))]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<FileResult> GetFileById(int fileId)
+        public ActionResult<string> GetFileById(int fileId)
         {
             var file = _database.ApplicationFiles.FirstOrDefault(x => x.Id == fileId);
             if (file == null)
@@ -28,7 +28,7 @@ namespace Backend.Api.Controllers
                 return NotFound();
             }
 
-            return File(file.Content, file.ContentType, file.FileName);
+            return Ok(File(file.Content, file.ContentType, file.FileName));
         }
     }
 }

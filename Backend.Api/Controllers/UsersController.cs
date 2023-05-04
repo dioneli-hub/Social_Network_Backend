@@ -45,11 +45,9 @@ namespace Backend.Api.Controllers
         public ActionResult<UserModel> GetUserById(int userId)
         {
             var user = _database.Users
-               
-                .Include(x => x.Avatar)
-                //when mapper is included, add the following
-               //.Include(x => x.UserFollowers)
-               //.Include(x => x.UserFollowsTo)
+               .Include(x => x.Avatar)
+               .Include(x => x.UserFollowers)
+               .Include(x => x.UserFollowsTo)
                .FirstOrDefault(x => x.Id == userId);
             return Ok(_mapper.Map<UserModel>(user));
         }
