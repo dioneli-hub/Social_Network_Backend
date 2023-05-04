@@ -25,7 +25,6 @@ namespace Backend.Api.Controllers
             _mapper = mapper;
         }
 
-        [AllowAnonymous] //!!
         [HttpGet("news", Name = nameof(GetNews))]
         public ActionResult<List<PostModel>> GetNews()
         {
@@ -215,8 +214,8 @@ namespace Backend.Api.Controllers
         {
             get
             {
-                var nameClaim = HttpContext.User.Identity.Name;
-                return int.Parse( nameClaim );
+                var nameClaim = HttpContext.User.Identity!.Name;
+                return int.Parse( nameClaim! );
             }
         }
 

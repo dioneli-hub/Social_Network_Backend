@@ -55,8 +55,9 @@ namespace Backend.Api.Controllers
         {
             get
             {
-                var nameClaim = HttpContext.User.Identity.Name;
-                return int.Parse(nameClaim);
+                var nameClaim = HttpContext.User.Identity!.Name;
+                return int.Parse(nameClaim!);
+
             }
         }
     }

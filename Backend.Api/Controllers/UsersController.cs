@@ -31,7 +31,6 @@ namespace Backend.Api.Controllers
             _mapper = mapper;
         }
 
-        [AllowAnonymous] // !!
         [HttpGet(Name = nameof(GetAllUsers))]
         [ProducesResponseType(typeof(List<SimpleUserModel>), StatusCodes.Status200OK)]
         public ActionResult<List<SimpleUserModel>> GetAllUsers()
@@ -42,7 +41,6 @@ namespace Backend.Api.Controllers
             return Ok(_mapper.Map<List<SimpleUserModel>>(users)); 
         }
 
-        [AllowAnonymous] // !!
         [HttpGet("{userId}", Name = nameof(GetUserById))]
         public ActionResult<UserModel> GetUserById(int userId)
         {
@@ -228,8 +226,8 @@ namespace Backend.Api.Controllers
         {
             get
             {
-                var nameClaim = HttpContext.User.Identity.Name;
-                return int.Parse(nameClaim);
+                var nameClaim = HttpContext.User.Identity!.Name;
+                return int.Parse(nameClaim!);
             }
         }
     }
