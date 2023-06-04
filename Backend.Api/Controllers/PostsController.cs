@@ -5,9 +5,7 @@ using Backend.DataAccess.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
-using Microsoft.Extensions.Hosting;
-using System.Collections.Generic;
+
 
 namespace Backend.Api.Controllers
 {
@@ -34,20 +32,21 @@ namespace Backend.Api.Controllers
                 .SelectMany(x => x.UserFollowsTo.SelectMany(f => f.User.Posts))
                 .Union(_database.Posts.Where(x => x.AuthorId == CurrentUserId))
                 .Distinct()
-                
-    
                 .Include(x => x.Author)
                 .ThenInclude(x => x.Avatar)
                 .OrderByDescending(x => x.Id)
-                //.Include(x => x.Likes)
-                //.Include(x => x.Comments)
-                .ToList();
+                .Select(post => new PostModel
+                {
+                    Id = post.Id,
+                    Text = post.Text,
+                    CreatedAt = post.CreatedAt,
+                    TotalLikes = post.Likes.Count,
+                    TotalComments = post.Comments.Count,
+                    Author = _mapper.Map<SimpleUserModel>(post.Author)
+                })
+                .ToList(); 
 
-            var projections = _mapper.Map<List<PostModel>>(posts);
-
-            //return Ok(_mapper.Map<PostModel>(posts)); // add an automapper Mapper.Map<List<Person>, List<PersonView>>(people);
-            return Ok(projections);
-            //return Ok(posts);
+            return Ok(posts);
         }
 
         [HttpPost(Name = nameof(CreatePost))]
