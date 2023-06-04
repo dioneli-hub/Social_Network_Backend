@@ -76,7 +76,7 @@ namespace Backend.Api.Controllers
             _database.Users.Add(user);
             _database.SaveChanges();
 
-            return Ok(_mapper.Map<UserModel>(GetUserById(user.Id))); //mapper
+            return Ok(GetUserById(user.Id)); 
         }
 
         [HttpGet("{userId}/posts", Name = nameof(GetUserPosts))]

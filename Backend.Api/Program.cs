@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
@@ -34,12 +35,12 @@ builder.Services.AddAuthentication(options =>
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("GDxN28S3JvTRNqzGULCZvH9kzQ8qrxdB")), 
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("GDxN28S3JvTRNqzGULCZvH9kzQ8qrxdB")),
                         ValidateLifetime = true,
                         ValidateIssuer = true, // was true
                         ValidIssuer = "SocialNetwork.Issuer",
                         ValidateAudience = true, // was true
-                        ValidAudience = "SocialNetwork.Audience", 
+                        ValidAudience = "SocialNetwork.Audience",
                     };
                 });
 
@@ -81,6 +82,13 @@ builder.Services.AddSwaggerGen(options =>
 
 
 var app = builder.Build();
+
+//CORS
+app.UseCors(policy =>
+    policy.WithOrigins("https://localhost:7123", "http://localhost:5204", "http://localhost:4200", "https://localhost:4200")
+        .AllowAnyMethod()
+        .WithHeaders(HeaderNames.ContentType, HeaderNames.Authorization)
+);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
