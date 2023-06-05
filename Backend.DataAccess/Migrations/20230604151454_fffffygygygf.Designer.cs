@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.DataAccess.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20230414084908_Update")]
-    partial class Update
+    [Migration("20230604151454_fffffygygygf")]
+    partial class fffffygygygf
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -61,6 +61,9 @@ namespace Backend.DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -70,7 +73,9 @@ namespace Backend.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Posts");
+                    b.HasIndex("AuthorId");
+
+                    b.ToTable("Posts", (string)null);
                 });
 
             modelBuilder.Entity("Backend.DataAccess.Entities.PostComment", b =>
@@ -80,6 +85,9 @@ namespace Backend.DataAccess.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -93,9 +101,11 @@ namespace Backend.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AuthorId");
+
                     b.HasIndex("PostId");
 
-                    b.ToTable("PostComments");
+                    b.ToTable("PostComments", (string)null);
                 });
 
             modelBuilder.Entity("Backend.DataAccess.Entities.PostLike", b =>
@@ -112,11 +122,16 @@ namespace Backend.DataAccess.Migrations
                     b.Property<int>("PostId")
                         .HasColumnType("int");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PostId");
 
-                    b.ToTable("PostLikes");
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PostLikes", (string)null);
                 });
 
             modelBuilder.Entity("Backend.DataAccess.Entities.User", b =>
@@ -126,6 +141,9 @@ namespace Backend.DataAccess.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AvatarFileId")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -142,7 +160,17 @@ namespace Backend.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SaltHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("AvatarFileId");
 
                     b.ToTable("Users", (string)null);
                 });
@@ -162,13 +190,32 @@ namespace Backend.DataAccess.Migrations
                     b.ToTable("UserFollowers", (string)null);
                 });
 
+            modelBuilder.Entity("Backend.DataAccess.Entities.Post", b =>
+                {
+                    b.HasOne("Backend.DataAccess.Entities.User", "Author")
+                        .WithMany("Posts")
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+                });
+
             modelBuilder.Entity("Backend.DataAccess.Entities.PostComment", b =>
                 {
+                    b.HasOne("Backend.DataAccess.Entities.User", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Backend.DataAccess.Entities.Post", "Post")
                         .WithMany("Comments")
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Author");
 
                     b.Navigation("Post");
                 });
@@ -181,7 +228,24 @@ namespace Backend.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Backend.DataAccess.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Post");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Backend.DataAccess.Entities.User", b =>
+                {
+                    b.HasOne("Backend.DataAccess.Entities.ApplicationFile", "Avatar")
+                        .WithMany()
+                        .HasForeignKey("AvatarFileId");
+
+                    b.Navigation("Avatar");
                 });
 
             modelBuilder.Entity("Backend.DataAccess.Entities.UserFollower", b =>
@@ -212,6 +276,8 @@ namespace Backend.DataAccess.Migrations
 
             modelBuilder.Entity("Backend.DataAccess.Entities.User", b =>
                 {
+                    b.Navigation("Posts");
+
                     b.Navigation("UserFollowers");
 
                     b.Navigation("UserFollowsTo");

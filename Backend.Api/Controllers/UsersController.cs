@@ -3,79 +3,93 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using AutoMapper.Configuration.Annotations;
 using Backend.Api.ApiModels;
+using Backend.Api.Managers;
 using Backend.DataAccess;
 using Backend.DataAccess.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 
 namespace Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly DatabaseContext _database;
+        private readonly IMapper _mapper;
 
-        public UsersController(DatabaseContext database)
+        public UsersController(DatabaseContext database, IMapper mapper)
         {
             _database = database;
+            _mapper = mapper;
         }
 
         [HttpGet(Name = nameof(GetAllUsers))]
+        [ProducesResponseType(typeof(List<SimpleUserModel>), StatusCodes.Status200OK)]
         public ActionResult<List<SimpleUserModel>> GetAllUsers()
         {
             var users = _database.Users
                 .Include(x => x.Avatar)
                 .ToList();
-            return Ok(users.ToList()); //Mapper!
+            return Ok(_mapper.Map<List<SimpleUserModel>>(users)); 
         }
 
         [HttpGet("{userId}", Name = nameof(GetUserById))]
         public ActionResult<UserModel> GetUserById(int userId)
         {
             var user = _database.Users
-               
-                .Include(x => x.Avatar)
-                //when mapper is included, add the following
-               //.Include(x => x.UserFollowers)
-               //.Include(x => x.UserFollowsTo)
+               .Include(x => x.Avatar)
+               .Include(x => x.UserFollowers)
+               .Include(x => x.UserFollowsTo)
                .FirstOrDefault(x => x.Id == userId);
-            return Ok(user);//Mapper!
+            return Ok(_mapper.Map<UserModel>(user));
         }
 
-        [HttpPost(Name = nameof(RegisterUser))]
-        //[AllowAnonymous] Allows the not-authenticated users to register
+        [HttpPost(Name = nameof(RegisterUser))] 
+        [AllowAnonymous]
         public ActionResult<UserModel> RegisterUser(CreateUserModel model)
         {
-           //Will need to add password functionality
+            var hasAnyByEmail = _database.Users.Any(x => x.Email == model.Email);
+            if (hasAnyByEmail)
+            {
+                return NotFound();
+            }
+
+            var hashModel = HashManager.Generate(model.Password);
             var user = new User
             {
                 FirstName = model.FirstName,
                 LastName = model.LastName,
                 Email = model.Email,
+                PasswordHash = Convert.ToBase64String(hashModel.Hash),
+                SaltHash = Convert.ToBase64String(hashModel.Salt),
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
             _database.Users.Add(user);
             _database.SaveChanges();
 
-            return GetUserById(user.Id);
+            return Ok(GetUserById(user.Id)); 
         }
 
         [HttpGet("{userId}/posts", Name = nameof(GetUserPosts))]
-        public ActionResult<PostModel> GetUserPosts(int userId)
+        public ActionResult<List<PostModel>> GetUserPosts(int userId)
         {
             var posts = _database.Posts
                 .Include(x => x.Author)
                 .ThenInclude(x => x.Avatar)
                 .Include(x => x.Likes)
                 .Include(x => x.Comments)
+                .Where(x => x.AuthorId == userId)
                 .ToList();
-            return Ok(posts.ToList()); //Mapper!
+            return Ok(_mapper.Map<List<PostModel>>(posts)); //Mapper check!
         }
 
         [HttpGet("{userId}/followers", Name = nameof(GetUserFollowers))]
@@ -92,10 +106,9 @@ namespace Backend.Api.Controllers
             {
                 usersQuery = usersQuery.Take(limit.Value);
             }
-
             var users = usersQuery.ToList();
 
-            return Ok(users.ToList()); //Mapper!
+            return Ok(_mapper.Map<List<SimpleUserModel>>(users)); //Mapper check!
         }
 
         [HttpGet("{userId}/follow-to", Name = nameof(GetUserFollowsTo))]
@@ -114,7 +127,7 @@ namespace Backend.Api.Controllers
             }
 
             var users = usersQuery.ToList();
-            return Ok(users.ToList()); //Mapper!
+            return Ok(_mapper.Map<List<SimpleUserModel>>(users)); //Mapper check!
         }
 
         [HttpPost("{userId}/follow-to/{followToUserId}", Name = nameof(FollowToUser))]
@@ -211,8 +224,8 @@ namespace Backend.Api.Controllers
         {
             get
             {
-                var nameClaim = HttpContext.User.Identity.Name;
-                return int.Parse(nameClaim);
+                var nameClaim = HttpContext.User.Identity!.Name;
+                return int.Parse(nameClaim!);
             }
         }
     }

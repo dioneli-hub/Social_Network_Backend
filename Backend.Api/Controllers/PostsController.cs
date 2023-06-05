@@ -2,15 +2,17 @@
 using Backend.Api.ApiModels;
 using Backend.DataAccess;
 using Backend.DataAccess.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
+
 
 namespace Backend.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    
+    [Authorize]
+
     public class PostsController : ControllerBase
     {
         private readonly DatabaseContext _database;
@@ -32,12 +34,19 @@ namespace Backend.Api.Controllers
                 .Distinct()
                 .Include(x => x.Author)
                 .ThenInclude(x => x.Avatar)
-                .Include(x => x.Likes)
-                .Include(x => x.Comments)
                 .OrderByDescending(x => x.Id)
-                .ToList();
+                .Select(post => new PostModel
+                {
+                    Id = post.Id,
+                    Text = post.Text,
+                    CreatedAt = post.CreatedAt,
+                    TotalLikes = post.Likes.Count,
+                    TotalComments = post.Comments.Count,
+                    Author = _mapper.Map<SimpleUserModel>(post.Author)
+                })
+                .ToList(); 
 
-            return Ok(posts); // add an automapper
+            return Ok(posts);
         }
 
         [HttpPost(Name = nameof(CreatePost))]
@@ -53,7 +62,7 @@ namespace Backend.Api.Controllers
             _database.Posts.Add(post);
             _database.SaveChanges();
 
-            return GetPostById(post.Id);
+            return GetPostById(post.Id); 
         }
 
         [HttpGet("{postId}", Name = nameof(GetPostById))]
@@ -67,7 +76,7 @@ namespace Backend.Api.Controllers
                 .Include(x => x.Comments)
                 .FirstOrDefault(x => x.Id == postId);
 
-            return post != null ? Ok(post) : NotFound();
+            return post != null ? Ok(_mapper.Map<PostModel>(post)) : NotFound(); 
         }
 
         [HttpDelete("{postId}", Name = nameof(RemovePost))]
@@ -99,7 +108,7 @@ namespace Backend.Api.Controllers
                 .OrderBy(x => x.Id)
                 .ToList();
 
-            return Ok(comments.ToList()); // later we'll modify that with mapper
+            return Ok(_mapper.Map<List<PostCommentModel>>(comments)); 
         }
 
         [HttpPost("{postId}/comments", Name = nameof(AddCommentToPost))]
@@ -128,9 +137,8 @@ namespace Backend.Api.Controllers
                 .Include(x => x.Author)
                 .First();
 
-            return Ok(_mapper.Map<PostCommentModel>(comment)); //maybe modify???
+            return Ok(_mapper.Map<PostCommentModel>(comment)); 
         }
-
 
         [HttpDelete("{postId}/comments/{commentId}", Name = nameof(RemoveCommentFromPost))]
         public ActionResult RemoveCommentFromPost(int postId, int commentId)
@@ -153,13 +161,13 @@ namespace Backend.Api.Controllers
         }
 
         [HttpGet("{postId}/likes", Name = nameof(GetPostLikes))]
-        public ActionResult<List<PostCommentModel>> GetPostLikes(int postId)
+        public ActionResult<List<PostLikeModel>> GetPostLikes(int postId)
         {
             var likes = _database.PostLikes
                 .Include(x => x.User)
-                .Where(x => x.Id == postId)
+                .Where(x => x.PostId == postId)
                 .ToList();
-            return Ok(likes); // change via automapper
+            return Ok(_mapper.Map<List<PostLikeModel>>(likes)); 
         }
 
         [HttpPost("{postId}/likes", Name = nameof(AddLikeToPost))]
@@ -188,7 +196,7 @@ namespace Backend.Api.Controllers
                 .Include(x => x.User) 
                 .FirstOrDefault(x => x.PostId == postId && x.UserId == CurrentUserId);
 
-            return Ok(like); //later we'll map with automapper
+            return Ok(_mapper.Map<PostLikeModel>(like)); 
         }
 
         [HttpDelete("{postId}/likes", Name = nameof(RemoveLikeFromPost))]
@@ -211,8 +219,8 @@ namespace Backend.Api.Controllers
         {
             get
             {
-                var nameClaim = HttpContext.User.Identity.Name;
-                return int.Parse( nameClaim );
+                var nameClaim = HttpContext.User.Identity!.Name;
+                return int.Parse( nameClaim! );
             }
         }
 
