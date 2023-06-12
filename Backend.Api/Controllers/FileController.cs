@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Api.Controllers
 {
@@ -20,9 +21,9 @@ namespace Backend.Api.Controllers
         [HttpGet("{fileId}", Name = nameof(GetFileById))]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<string> GetFileById(int fileId)
+        public async Task<ActionResult<string>> GetFileById(int fileId)
         {
-            var file = _database.ApplicationFiles.FirstOrDefault(x => x.Id == fileId);
+            var file = await _database.ApplicationFiles.FirstOrDefaultAsync(x => x.Id == fileId);
             if (file == null)
             {
                 return NotFound();

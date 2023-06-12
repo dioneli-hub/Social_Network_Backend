@@ -1,8 +1,9 @@
 ﻿using AutoMapper;
-using Backend.Api.ApiModels;
-using Backend.Api.Managers;
+using Backend.Domain;
+using Backend.ApiModels;
+using Backend.BusinessLogic.Repositories.AuthRepository;
+using Backend.BusinessLogic.UserContext;
 using Backend.DataAccess;
-using Backend.DataAccess.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,51 +15,34 @@ namespace Backend.Api.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
+        private readonly IAuthRepository _authRepository;
+        private readonly IUserContextService _userContextService;
 
-        private readonly DatabaseContext _database;
-        private readonly IMapper _mapper;
-
-        public AuthController(DatabaseContext database, IMapper mapper)
+        public AuthController(IAuthRepository authRepository, IUserContextService userContextService)
         {
-            _database = database;
-            _mapper = mapper;
+            _authRepository = authRepository;
+            _userContextService = userContextService;
         }
 
         [Authorize]
         [HttpGet(Name = nameof(GetAuthenticatedUser))]
-        public ActionResult<UserModel> GetAuthenticatedUser()
+        public async Task<ActionResult<ServiceResponse<UserModel>>> GetAuthenticatedUser()
         {
-            var user = _database.Users
-                .Include(x => x.Avatar)
-                .Include(x => x.UserFollowers)
-                .Include(x => x.UserFollowsTo)
-                .FirstOrDefault(x => x.Id == CurrentUserId);
-
-            return Ok(_mapper.Map<UserModel>(user)); //  mapper check
+            var currentUserId = _userContextService.GetCurrentUserId();
+            var result = await _authRepository.GetAuthenticatedUser(currentUserId);
+            return Ok(result);
         }
 
         [AllowAnonymous]
         [HttpPost(Name = nameof(Authenticate))]
-        public ActionResult<TokenModel> Authenticate(AuthenticateModel model)
+        public async Task<ActionResult<string>> Authenticate(AuthenticateModel model)
         {
-            var user = _database.Users.FirstOrDefault(x => x.Email == model.Email);
-            if (user == null || !PasswordManager.Verify(user, model.Password))
+            var response = await _authRepository.Authenticate(model.Email, model.Password);
+            if (!response.IsSuccess)
             {
-                return Forbid();
+                return BadRequest(response);
             }
-
-            var jwt = JwtManager.GenerateJwtToken(user.Id);
-            return Ok(jwt);
-        }
-
-        public int CurrentUserId
-        {
-            get
-            {
-                var nameClaim = HttpContext.User.Identity!.Name;
-                return int.Parse(nameClaim!);
-
-            }
+            return Ok(response);
         }
     }
 }

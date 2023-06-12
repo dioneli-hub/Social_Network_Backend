@@ -3,9 +3,26 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.Api", "Backend.Api\Backend.Api.csproj", "{DA5B7D64-BBD0-4056-92A5-3EB9BD6D51D1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backend.Api", "Backend.Api\Backend.Api.csproj", "{DA5B7D64-BBD0-4056-92A5-3EB9BD6D51D1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{12D6C3DF-DCAC-4C30-9596-C82CA6A71B42} = {12D6C3DF-DCAC-4C30-9596-C82CA6A71B42}
+		{BC673A02-65AC-4BB8-BA9E-A6981A957350} = {BC673A02-65AC-4BB8-BA9E-A6981A957350}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.DataAccess", "Backend.DataAccess\Backend.DataAccess.csproj", "{FA034089-F438-4167-98AB-11C78CC5F141}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backend.DataAccess", "Backend.DataAccess\Backend.DataAccess.csproj", "{FA034089-F438-4167-98AB-11C78CC5F141}"
+	ProjectSection(ProjectDependencies) = postProject
+		{12D6C3DF-DCAC-4C30-9596-C82CA6A71B42} = {12D6C3DF-DCAC-4C30-9596-C82CA6A71B42}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.Domain", "Backend.Domain\Backend.Domain.csproj", "{12D6C3DF-DCAC-4C30-9596-C82CA6A71B42}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.BusinessLogic", "Backend.BusinessLogic\Backend.BusinessLogic.csproj", "{BC673A02-65AC-4BB8-BA9E-A6981A957350}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0D7BCB57-D8F7-46BB-A07F-1CFE4073E529} = {0D7BCB57-D8F7-46BB-A07F-1CFE4073E529}
+		{FA034089-F438-4167-98AB-11C78CC5F141} = {FA034089-F438-4167-98AB-11C78CC5F141}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.ApiModels", "Backend.ApiModels\Backend.ApiModels.csproj", "{0D7BCB57-D8F7-46BB-A07F-1CFE4073E529}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +38,18 @@ Global
 		{FA034089-F438-4167-98AB-11C78CC5F141}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA034089-F438-4167-98AB-11C78CC5F141}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA034089-F438-4167-98AB-11C78CC5F141}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12D6C3DF-DCAC-4C30-9596-C82CA6A71B42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12D6C3DF-DCAC-4C30-9596-C82CA6A71B42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12D6C3DF-DCAC-4C30-9596-C82CA6A71B42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12D6C3DF-DCAC-4C30-9596-C82CA6A71B42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC673A02-65AC-4BB8-BA9E-A6981A957350}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC673A02-65AC-4BB8-BA9E-A6981A957350}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC673A02-65AC-4BB8-BA9E-A6981A957350}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC673A02-65AC-4BB8-BA9E-A6981A957350}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D7BCB57-D8F7-46BB-A07F-1CFE4073E529}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D7BCB57-D8F7-46BB-A07F-1CFE4073E529}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D7BCB57-D8F7-46BB-A07F-1CFE4073E529}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D7BCB57-D8F7-46BB-A07F-1CFE4073E529}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

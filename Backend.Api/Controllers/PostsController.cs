@@ -1,7 +1,10 @@
 ﻿using AutoMapper;
-using Backend.Api.ApiModels;
+using Backend.Api.Infrastructure;
+using Backend.ApiModels;
+using Backend.BusinessLogic.Repositories.PostsRepository;
+using Backend.BusinessLogic.UserContext;
 using Backend.DataAccess;
-using Backend.DataAccess.Entities;
+using Backend.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,215 +18,92 @@ namespace Backend.Api.Controllers
 
     public class PostsController : ControllerBase
     {
-        private readonly DatabaseContext _database;
-        private readonly IMapper _mapper;
+        private readonly IPostsRepository _postsRepository;
+        private readonly IUserContextService _userContextService;
 
-        public PostsController(DatabaseContext database, IMapper mapper)
+        public PostsController(IPostsRepository postsRepository, IUserContextService userContextService)
         {
-            _database = database;
-            _mapper = mapper;
+            _postsRepository = postsRepository;
+            _userContextService = userContextService;
         }
 
         [HttpGet("news", Name = nameof(GetNews))]
-        public ActionResult<List<PostModel>> GetNews()
+        public async Task<ActionResult<List<PostModel>>> GetNews()
         {
-            var posts = _database.Users
-                .Where(x => x.Id == CurrentUserId)
-                .SelectMany(x => x.UserFollowsTo.SelectMany(f => f.User.Posts))
-                .Union(_database.Posts.Where(x => x.AuthorId == CurrentUserId))
-                .Distinct()
-                .Include(x => x.Author)
-                .ThenInclude(x => x.Avatar)
-                .OrderByDescending(x => x.Id)
-                .Select(post => new PostModel
-                {
-                    Id = post.Id,
-                    Text = post.Text,
-                    CreatedAt = post.CreatedAt,
-                    TotalLikes = post.Likes.Count,
-                    TotalComments = post.Comments.Count,
-                    Author = _mapper.Map<SimpleUserModel>(post.Author)
-                })
-                .ToList(); 
+            var currentUserId = _userContextService.GetCurrentUserId();
 
-            return Ok(posts);
+            var news = await _postsRepository.GetNews(currentUserId);
+            return Ok(news);
         }
 
         [HttpPost(Name = nameof(CreatePost))]
-        public ActionResult<PostModel> CreatePost(CreatePostModel model)
+        public async Task<ActionResult<PostModel>> CreatePost(CreatePostModel model)
         {
-            var post = new Post
-            {
-                Text = model.Text,
-                AuthorId = CurrentUserId,
-                CreatedAt = DateTimeOffset.UtcNow
-            };
-
-            _database.Posts.Add(post);
-            _database.SaveChanges();
-
-            return GetPostById(post.Id); 
+            var currentUserId = _userContextService.GetCurrentUserId();
+            var postId =await _postsRepository.CreatePost(model, currentUserId);
+           return Ok(postId);
         }
 
-        [HttpGet("{postId}", Name = nameof(GetPostById))]
-        public ActionResult<PostModel> GetPostById(int postId)
-
+        [HttpGet("{postId}", Name = nameof(GetPostById))] 
+        public async Task<ActionResult<PostModel>> GetPostById(int postId)
         {
-            var post = _database.Posts
-                .Include(x => x.Author)
-                .ThenInclude(x => x.Avatar)
-                .Include(x => x.Likes)
-                .Include(x => x.Comments)
-                .FirstOrDefault(x => x.Id == postId);
-
-            return post != null ? Ok(_mapper.Map<PostModel>(post)) : NotFound(); 
+            var post = await _postsRepository.GetPostById(postId);
+            return post != null ? Ok(post) : NotFound();
         }
 
         [HttpDelete("{postId}", Name = nameof(RemovePost))]
-        public ActionResult RemovePost(int postId)
+        public async Task<ActionResult> RemovePost(int postId)
         {
-            var post = _database.Posts
-                .Include(x => x.Comments)
-                .Include(x => x.Likes)
-                .FirstOrDefault(x => x.Id == postId);
-            if (post == null)
-            {
-                return NotFound();
-            }
-
-            _database.PostComments.RemoveRange(post.Comments);
-            _database.PostLikes.RemoveRange(post.Likes);
-            _database.Posts.Remove(post);
-            _database.SaveChanges();
-
-            return Ok();
+            var result = await _postsRepository.RemovePost(postId);
+            return Ok(result);
         }
 
         [HttpGet("{postId}/comments", Name = nameof(GetPostComments))]
-        public ActionResult<List<PostCommentModel>> GetPostComments(int postId)
+        public async Task<ActionResult<List<PostCommentModel>>> GetPostComments(int postId)
         {
-            var comments = _database.PostComments
-                .Include(x => x.Author)
-                .Where(x => x.PostId == postId)
-                .OrderBy(x => x.Id)
-                .ToList();
-
-            return Ok(_mapper.Map<List<PostCommentModel>>(comments)); 
+            var comments = await _postsRepository.GetPostComments(postId);
+            return Ok(comments); 
         }
 
         [HttpPost("{postId}/comments", Name = nameof(AddCommentToPost))]
-        public ActionResult<PostCommentModel> AddCommentToPost(
+        public async Task<ActionResult<PostCommentModel>> AddCommentToPost(
             [FromBody] AddCommentToPostModel model,
             [FromRoute] int postId)
         {
-
-            var hasPost = _database.Posts.Any(x => x.Id == postId);
-            if (!hasPost)
-            {
-                return NotFound();
-            }
-
-            var comment = new PostComment
-            {
-                AuthorId = CurrentUserId,
-                PostId = postId,
-                Text = model.Text,
-                CreatedAt = DateTimeOffset.UtcNow
-            };
-            _database.PostComments.Add(comment);
-            _database.SaveChanges();
-
-            comment = _database.PostComments.Where(x => x.Id == comment.Id)
-                .Include(x => x.Author)
-                .First();
-
-            return Ok(_mapper.Map<PostCommentModel>(comment)); 
+            var currentUserId = _userContextService.GetCurrentUserId();
+            var comment = await _postsRepository.AddCommentToPost(model, postId, currentUserId);
+            return Ok(comment); 
         }
 
         [HttpDelete("{postId}/comments/{commentId}", Name = nameof(RemoveCommentFromPost))]
-        public ActionResult RemoveCommentFromPost(int postId, int commentId)
+        public async Task<ActionResult> RemoveCommentFromPost(int postId, int commentId)
         {
-            var comment = _database.PostComments.FirstOrDefault(x => x.Id == commentId);
-            if (comment == null)
-            {
-                return NotFound();
-            }
-
-            if (comment.PostId != postId || comment.AuthorId != CurrentUserId) 
-            {
-                return Forbid();
-            }
-
-            _database.PostComments.Remove(comment);
-            _database.SaveChanges();
-
-            return Ok();
+            var currentUserId = _userContextService.GetCurrentUserId();
+            var result = await _postsRepository.RemoveCommentFromPost(commentId, postId, currentUserId);
+            return Ok(result);
         }
 
         [HttpGet("{postId}/likes", Name = nameof(GetPostLikes))]
-        public ActionResult<List<PostLikeModel>> GetPostLikes(int postId)
+        public async Task<ActionResult<List<PostLikeModel>>> GetPostLikes(int postId)
         {
-            var likes = _database.PostLikes
-                .Include(x => x.User)
-                .Where(x => x.PostId == postId)
-                .ToList();
-            return Ok(_mapper.Map<List<PostLikeModel>>(likes)); 
+            var likes = await _postsRepository.GetPostLikes(postId);
+            return Ok(likes); 
         }
 
         [HttpPost("{postId}/likes", Name = nameof(AddLikeToPost))]
-        public ActionResult<PostLikeModel> AddLikeToPost(int postId)
+        public async Task<ActionResult<PostLikeModel>> AddLikeToPost(int postId)
         {
-            var hasPost = _database.Posts.Any(x => x.Id == postId);
-            if (!hasPost)
-            {
-                return NotFound();
-            }
-
-            var like = _database.PostLikes.FirstOrDefault(x => x.PostId == postId && x.UserId == CurrentUserId);
-            if (like == null)
-            {
-                like = new PostLike
-                {
-                    UserId = CurrentUserId,
-                    PostId = postId,
-                    LikedAt = DateTimeOffset.UtcNow
-                };
-                _database.PostLikes.Add(like);
-                _database.SaveChanges();
-            }
-
-            like = _database.PostLikes
-                .Include(x => x.User) 
-                .FirstOrDefault(x => x.PostId == postId && x.UserId == CurrentUserId);
-
-            return Ok(_mapper.Map<PostLikeModel>(like)); 
+            var currentUserId = _userContextService.GetCurrentUserId();
+            var like = await _postsRepository.AddLikeToPost(postId, currentUserId);
+            return Ok(like); 
         }
 
         [HttpDelete("{postId}/likes", Name = nameof(RemoveLikeFromPost))]
-        public ActionResult RemoveLikeFromPost(int postId)
+        public async Task<ActionResult> RemoveLikeFromPost(int postId)
         {
-            var like = _database.PostLikes.FirstOrDefault(x => x.PostId == postId && x.UserId == CurrentUserId);
-
-            if (like == null)
-            {
-                return NotFound();
-            }
-
-            _database.PostLikes.Remove(like);
-            _database.SaveChanges();
-
-            return Ok();
+            var currentUserId = _userContextService.GetCurrentUserId();
+            var like = await _postsRepository.RemoveLikeFromPost(postId, currentUserId);
+            return Ok(like);
         }
-
-        public int CurrentUserId
-        {
-            get
-            {
-                var nameClaim = HttpContext.User.Identity!.Name;
-                return int.Parse( nameClaim! );
-            }
-        }
-
-
     }
 }

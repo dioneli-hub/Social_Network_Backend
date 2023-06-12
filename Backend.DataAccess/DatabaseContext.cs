@@ -1,5 +1,5 @@
 ﻿using Backend.DataAccess.Configurations;
-using Backend.DataAccess.Entities;
+using Backend.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.DataAccess
