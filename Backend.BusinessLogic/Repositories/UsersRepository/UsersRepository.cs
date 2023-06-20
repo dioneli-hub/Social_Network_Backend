@@ -126,7 +126,7 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
             {
                 usersQuery = usersQuery.Take(limit.Value);
             }
-            var users = usersQuery.ToListAsync();
+            var users = await usersQuery.ToListAsync();
 
             var usersFollowersModel = _mapper.Map<List<SimpleUserModel>>(users); 
 
@@ -151,7 +151,7 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
                 usersQuery = usersQuery.Take(limit.Value);
             }
 
-            var users = usersQuery.ToListAsync();
+            var users = await usersQuery.ToListAsync();
             var usersModel = _mapper.Map<List<SimpleUserModel>>(users); 
 
             response.Data = usersModel;
