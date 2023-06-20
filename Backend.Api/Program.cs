@@ -6,6 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Backend.BusinessLogic;
+using Backend.Api.Infrastructure;
+using Backend.BusinessLogic.UserContext;
 
 var builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
@@ -15,6 +18,14 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
+//HTTP context
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddControllersWithViews();
+
+//Dependency resolver
+builder.Services.AddApiDependencies()
+    .AddScoped<IUserContextService, UserContextService>(); ;
 
 //Db
 builder.Services.AddDbContext<DatabaseContext>(options =>

@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using Backend.Api.ApiModels;
-using Backend.DataAccess.Entities;
+using Backend.ApiModels;
+using Backend.Domain;
 
 namespace Backend.Api.Infrastructure
 {
