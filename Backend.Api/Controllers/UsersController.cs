@@ -1,21 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using AutoMapper;
-using AutoMapper.Configuration.Annotations;
-using Backend.ApiModels;
-using Backend.BusinessLogic.AuthManagers;
+﻿using Backend.ApiModels;
 using Backend.BusinessLogic.Repositories.UsersRepository;
 using Backend.BusinessLogic.UserContext;
-using Backend.DataAccess;
-using Backend.Domain;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 
 namespace Backend.Api.Controllers
 {
@@ -52,51 +39,93 @@ namespace Backend.Api.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<UserModel>> RegisterUser(CreateUserModel model)
         {
-            var user = await _usersRepository.RegisterUser(model);
-            return Ok(user);
+            var hasAnyByEmail = await _usersRepository.UserByEmailExists(model.Email);
+                
+            if (hasAnyByEmail)
+            {
+                return BadRequest();
+            } 
+
+            var createdUserModel = await _usersRepository.RegisterUser(model);
+            return Ok(createdUserModel);
         }
 
         [HttpGet("{userId}/posts", Name = nameof(GetUserPosts))]
         public async Task<ActionResult<List<PostModel>>> GetUserPosts(int userId)
         {
-          var posts = await _usersRepository.GetUserPosts(userId);
-          return Ok(posts);
+          var postModels = await _usersRepository.GetUserPosts(userId);
+          return Ok(postModels);
         }
 
         [HttpGet("{userId}/followers", Name = nameof(GetUserFollowers))]
         public async Task<ActionResult<List<SimpleUserModel>>> GetUserFollowers(int userId, int? limit)
         {
-            var followers = await _usersRepository.GetUserFollowers(userId, limit);
-            return Ok(followers);
+            var followerModels = await _usersRepository.GetUserFollowers(userId, limit);
+            return Ok(followerModels);
         }
 
         [HttpGet("{userId}/follow-to", Name = nameof(GetUserFollowsTo))]
         public async Task<ActionResult<List<SimpleUserModel>>> GetUserFollowsTo(int userId, int? limit)
         {
-            var users = await _usersRepository.GetUserFollowsTo(userId, limit);
-            return Ok(users);
+            var userModels = await _usersRepository.GetUserFollowsTo(userId, limit);
+            return Ok(userModels);
         }
 
-        [HttpPost("{userId}/follow-to/{followToUserId}", Name = nameof(FollowToUser))]
-        public async Task<ActionResult> FollowToUser(int userId, int followToUserId)
+        [HttpPost("{userId}/follow-to/{followToUserId}", Name = nameof(FollowUser))]
+        public async Task<ActionResult> FollowUser(int userId, int followToUserId)
         {
             var currentUserId = _userContextService.GetCurrentUserId();
-            var followToUser = await _usersRepository.FollowToUser(userId, followToUserId, currentUserId);
-            return Ok(followToUser);
+
+            if (currentUserId != userId)
+            {
+                return BadRequest("Cannot follow as another user.");
+            }
+
+            var hasFollow = await _usersRepository.DoesFollow(userId, followToUserId);
+
+            if (hasFollow)
+            {
+                return BadRequest("Current user is already followed.");
+            }
+
+            var userExists = await _usersRepository.UserByIdExists(userId);
+            var followUserExists = await _usersRepository.UserByIdExists(followToUserId);
+
+            if (!userExists || !followUserExists)
+            {
+                return BadRequest("User does not exist...");
+            }
+
+            var userFollowed = await _usersRepository.FollowUser(userId, followToUserId);
+
+            if (!userFollowed)
+            {
+                return BadRequest("Something went wrong...");
+            }
+
+            return Ok("User successfully followed.");
+
         }
 
-        [HttpGet("{userId}/follow-to/{followToUserId}", Name = nameof(HasFollowTo))]
-        public async Task<ActionResult<bool>> HasFollowTo(int userId, int followToUserId)
+        [HttpGet("{followerId}/follow-to/{userId}", Name = nameof(IsFollowedBy))]
+        public async Task<ActionResult<bool>> IsFollowedBy(int followerId, int userId)
         {
-            var hasFollowTo = await _usersRepository.HasFollowTo(userId, followToUserId);
-            return Ok(hasFollowTo);
+            var isFollowedBy = await _usersRepository.IsFollowedBy(followerId, userId);
+            return Ok(isFollowedBy);
         }
 
-        [HttpDelete("{userId}/follow-to/{unfollowUserId}", Name = nameof(UnfollowFromUser))]
-        public async Task<ActionResult<bool>> UnfollowFromUser(int userId, int unfollowUserId)
+        [HttpDelete("{userId}/follow-to/{unfollowUserId}", Name = nameof(UnfollowUser))]
+        public async Task<ActionResult<bool>> UnfollowUser(int userId, int unfollowUserId)
         {
-            var following = await _usersRepository.UnfollowFromUser(userId, unfollowUserId);
-            return Ok(following);
+
+            var hasUnfollowed = await _usersRepository.UnfollowUser(userId, unfollowUserId);
+
+            if (!hasUnfollowed)
+            {
+                return BadRequest("Cannot unfollow a not followed user :((((");
+            }
+
+            return Ok("User successfully unfollowed.");
         }
 
         [HttpPost("avatar", Name = nameof(UploadAvatar))]
@@ -104,6 +133,7 @@ namespace Backend.Api.Controllers
         {
             var currentUserId = _userContextService.GetCurrentUserId();
             var applicationFile = await _usersRepository.UploadAvatar(file, currentUserId);
+
             return Ok(applicationFile);
         }
     }
