@@ -29,22 +29,18 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
             _hashManager = hashManager;
         }
 
-        public async Task<ServiceResponse<List<SimpleUserModel>>> GetAllUsers()
+        public async Task<List<SimpleUserModel>> GetAllUsers()
         {
-            var response = new ServiceResponse<List<SimpleUserModel>>();
             var users = await _databaseContext.Users
                 .Include(x => x.Avatar)
                 .ToListAsync();
             var usersModel = _mapper.Map<List<SimpleUserModel>>(users);
 
-            response.Data = usersModel;
-
-            return response;
+            return usersModel;
         }
 
-        public async Task<ServiceResponse<UserModel>> GetUserById(int userId)
+        public async Task<UserModel> GetUserById(int userId)
         {
-            var response = new ServiceResponse<UserModel>();
             var user = await _databaseContext.Users
                 .Include(x => x.Avatar)
                 .Include(x => x.UserFollowers)
@@ -52,23 +48,12 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
                 .FirstOrDefaultAsync(x => x.Id == userId);
 
             var userModel = _mapper.Map<UserModel>(user);
-            response.Data = userModel;
 
-            return response;
+            return userModel;
         }
 
-        public async Task<ServiceResponse<int>> RegisterUser(CreateUserModel model)
+        public async Task<UserModel> RegisterUser(CreateUserModel model)
         {
-            var response = new ServiceResponse<int>();
-            var hasAnyByEmail = await _databaseContext.Users.AnyAsync(x => x.Email == model.Email);
-            if (hasAnyByEmail)
-            {
-                response.IsSuccess = false;
-                response.Message = "The user with such an email already exists. Please, try another one.";
-            }
-            else
-            {
-
                 var hashModel = _hashManager.Generate(model.Password);
                 var user = new User
                 {
@@ -82,21 +67,19 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
 
                 await _databaseContext.Users.AddAsync(user);
                 await _databaseContext.SaveChangesAsync();
-
-                var createdUserResponse = await GetUserById(user.Id);
-                var createdUserId = createdUserResponse.Data.Id;
-
-                response.Data = createdUserId;
-                response.IsSuccess = true;
-                response.Message = "The user has been successfully registered!";
-            }
-           
-            return response; 
+            
+                var createdUserModel = await GetUserById(user.Id);
+            
+            return createdUserModel;
         }
 
-        public async Task<ServiceResponse<List<PostModel>>> GetUserPosts(int userId) 
+        public async Task<bool> UserByEmailExists(string email)
         {
-            var response = new ServiceResponse<List<PostModel>>();
+            return await _databaseContext.Users.AnyAsync(x => x.Email == email);
+        }
+
+        public async Task<List<PostModel>> GetUserPosts(int userId) 
+        {
             var posts = await _databaseContext.Posts
                 .Include(x => x.Author)
                 .ThenInclude(x => x.Avatar)
@@ -104,17 +87,14 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
                 .Include(x => x.Comments)
                 .Where(x => x.AuthorId == userId)
                 .ToListAsync();
-            var postsModel = _mapper.Map<List<PostModel>>(posts); 
 
-            response.Data = postsModel;
-            response.IsSuccess = true;
+            var postModels = _mapper.Map<List<PostModel>>(posts); 
 
-            return response;
+            return postModels;
         }
 
-        public async Task<ServiceResponse<List<SimpleUserModel>>> GetUserFollowers(int userId, int? limit) //Does not work, fix needed!
+        public async Task<List<SimpleUserModel>> GetUserFollowers(int userId, int? limit) 
         {
-            var response = new ServiceResponse<List<SimpleUserModel>>();
             var usersQuery = _databaseContext.UserFollowers
                 .Include(x => x.User)
                 .ThenInclude(x => x.Avatar)
@@ -128,17 +108,13 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
             }
             var users = await usersQuery.ToListAsync();
 
-            var usersFollowersModel = _mapper.Map<List<SimpleUserModel>>(users); 
+            var usersFollowerModels = _mapper.Map<List<SimpleUserModel>>(users); 
 
-            response.Data = usersFollowersModel;
-            response.IsSuccess = true;
-
-            return response; 
+            return usersFollowerModels; 
         }
 
-        public async Task<ServiceResponse<List<SimpleUserModel>>> GetUserFollowsTo(int userId, int? limit) //Does not work, fix needed!
+        public async Task<List<SimpleUserModel>> GetUserFollowsTo(int userId, int? limit) 
         {
-            var response = new ServiceResponse<List<SimpleUserModel>>();
             var usersQuery = _databaseContext.UserFollowers
                 .Include(x => x.User)
                 .ThenInclude(x => x.Avatar)
@@ -152,67 +128,48 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
             }
 
             var users = await usersQuery.ToListAsync();
-            var usersModel = _mapper.Map<List<SimpleUserModel>>(users); 
+            var userModels = _mapper.Map<List<SimpleUserModel>>(users); 
 
-            response.Data = usersModel;
-            response.IsSuccess = true;
-            response.Message = "Here are the users that this user follows.";
-
-            return response;
+            return userModels;
         }
 
-        public bool HasFollow(int userId, int followToUserId)
+        public async Task<bool> DoesFollow(int userId, int followedUserId)
         {
-            return  _databaseContext.UserFollowers
-                .Any(x => x.FollowerId == userId &&
-                          x.UserId == followToUserId);
+            return  await _databaseContext.UserFollowers
+                .AnyAsync(x => x.FollowerId == userId &&
+                          x.UserId == followedUserId);
         }
 
-        public async Task<ServiceResponse<bool>> FollowToUser(int userId, int followToUserId, int currentUserId)
+        public async Task<bool> FollowUser(int userId, int followToUserId)
         {
-            var response = new ServiceResponse<bool>();
-            
-            if (currentUserId != userId)
+            var user = _databaseContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            var followToUser = _databaseContext.Users.FirstOrDefaultAsync(x => x.Id == followToUserId);
+
+            var following = new UserFollower
             {
-                response.IsSuccess = false;
-                response.Message = "Cannot follow as another user.";
-            }
+                FollowerId = userId,
+                UserId = followToUserId
+            };
+            await _databaseContext.UserFollowers.AddAsync(following);
+            await _databaseContext.SaveChangesAsync();
 
-            var hasFollow = HasFollow(userId, followToUserId);
-            if (!hasFollow)
-            {
-                var user = _databaseContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
-                var followToUser = _databaseContext.Users.FirstOrDefaultAsync(x => x.Id == followToUserId);
-
-                if (user == null || followToUser == null)
-                {
-                    response.IsSuccess = false;
-                    response.Message = "User not found.";
-                }
-
-                var following = new UserFollower
-                {
-                    FollowerId = userId,
-                    UserId = followToUserId
-                };
-                await _databaseContext.UserFollowers.AddAsync(following);
-                await _databaseContext.SaveChangesAsync();
-
-                response.IsSuccess = true;
-                response.Message = "Successfully started following the user.";
-            }
-            return response;
+            return true;
         }
 
-        public async Task<bool> HasFollowTo(int userId, int followToUserId)
+        public async Task<bool> UserByIdExists(int userId)
         {
-            var hasFollow = HasFollow(userId, followToUserId);
+            var userExists = await _databaseContext.Users.AnyAsync(x => x.Id == userId);
+            return userExists;
+        }
+
+        public async Task<bool> IsFollowedBy(int followerId, int userId) 
+        {
+            var hasFollow = await DoesFollow(followerId, userId);
             return hasFollow;
         }
 
-        public async Task<ServiceResponse<bool>> UnfollowFromUser(int userId, int unfollowUserId)
+        public async Task<bool> UnfollowUser(int userId, int unfollowUserId)
         {
-            var response = new ServiceResponse<bool>();
             var following = await _databaseContext.UserFollowers
                 .FirstOrDefaultAsync(x => x.UserId == unfollowUserId &&
                                      x.FollowerId == userId);
@@ -221,23 +178,14 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
                 _databaseContext.UserFollowers.Remove(following);
                 await _databaseContext.SaveChangesAsync();
 
-                response.Data = true;
-                response.IsSuccess = true;
-                response.Message = "Unfollowed this user.";
-            } else
+                return true;
 
-            {
-                response.Data = false;
-                response.IsSuccess = false;
-                response.Message = "Cannot unfollow an unfollowed user :((((";
             }
-
-            return response;
+            return false;
         }
 
-        public async Task<ServiceResponse<bool>> UploadAvatar(IFormFile file, int currentUserId)
+        public async Task<bool> UploadAvatar(IFormFile file, int currentUserId)
         {
-            var response = new ServiceResponse<bool>();
             var user = await _databaseContext.Users
                 .Include(x => x.Avatar)
                 .FirstOrDefaultAsync(x => x.Id == currentUserId);
@@ -263,11 +211,7 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
             await _databaseContext.ApplicationFiles.AddAsync(applicationFile);
             await _databaseContext.SaveChangesAsync();
 
-            response.Data = true;
-            response.IsSuccess = true;
-            response.Message = "Successfully uploaded an avatar!";
-
-            return response;
+            return true;
         }
     }
 }
