@@ -8,6 +8,7 @@ using Backend.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 
 
 namespace Backend.Api.Controllers
@@ -54,8 +55,15 @@ namespace Backend.Api.Controllers
         [HttpDelete("{postId}", Name = nameof(RemovePost))]
         public async Task<ActionResult> RemovePost(int postId)
         {
-            var result = await _postsRepository.RemovePost(postId);
-            return Ok(result);
+            var post = await _postsRepository.GetPostById(postId);
+            if (post == null)
+            {
+                return NotFound();
+            }
+
+            await _postsRepository.RemovePost(postId);
+
+            return Ok();
         }
 
         [HttpGet("{postId}/comments", Name = nameof(GetPostComments))]
@@ -70,6 +78,12 @@ namespace Backend.Api.Controllers
             [FromBody] AddCommentToPostModel model,
             [FromRoute] int postId)
         {
+            var postExists = await _postsRepository.PostExists(postId);
+            if(!postExists)
+            {
+                return NotFound();
+            }
+
             var currentUserId = _userContextService.GetCurrentUserId();
             var comment = await _postsRepository.AddCommentToPost(model, postId, currentUserId);
             return Ok(comment); 
@@ -79,8 +93,21 @@ namespace Backend.Api.Controllers
         public async Task<ActionResult> RemoveCommentFromPost(int postId, int commentId)
         {
             var currentUserId = _userContextService.GetCurrentUserId();
-            var result = await _postsRepository.RemoveCommentFromPost(commentId, postId, currentUserId);
-            return Ok(result);
+
+            var comment = await _postsRepository.GetPostCommentById(postId, commentId);
+
+            if (comment == null)
+            {
+                return NotFound();
+            }
+
+            else if (comment.PostId != postId || comment.AuthorId != currentUserId)
+            {
+                return Forbid();
+            }
+
+            await _postsRepository.RemoveCommentFromPost(commentId, postId, currentUserId);
+            return Ok();
         }
 
         [HttpGet("{postId}/likes", Name = nameof(GetPostLikes))]
@@ -94,16 +121,34 @@ namespace Backend.Api.Controllers
         public async Task<ActionResult<PostLikeModel>> AddLikeToPost(int postId)
         {
             var currentUserId = _userContextService.GetCurrentUserId();
-            var like = await _postsRepository.AddLikeToPost(postId, currentUserId);
+            var like = await _postsRepository.GetPostLikeById(postId, currentUserId);
+
+            var hasPost = await _postsRepository.PostExists(postId);
+            if (!hasPost)
+            {
+                return NotFound();
+            }
+
+            if (like == null)
+            {
+                await _postsRepository.AddLikeToPost(postId, currentUserId);
+            }
+
             return Ok(like); 
         }
 
         [HttpDelete("{postId}/likes", Name = nameof(RemoveLikeFromPost))]
-        public async Task<ActionResult> RemoveLikeFromPost(int postId)
+        public async Task<ActionResult> RemoveLikeFromPost(int postId, int likeId)
         {
             var currentUserId = _userContextService.GetCurrentUserId();
-            var like = await _postsRepository.RemoveLikeFromPost(postId, currentUserId);
-            return Ok(like);
+            var like = await _postsRepository.GetPostLikeById(postId, likeId);
+            if (like == null)
+            {
+                return NotFound();
+            }
+
+            await _postsRepository.RemoveLikeFromPost(postId, currentUserId);
+            return Ok();
         }
     }
 }
