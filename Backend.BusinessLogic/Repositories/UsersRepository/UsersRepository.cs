@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using Azure;
 using Backend.ApiModels;
+using Backend.BusinessLogic.AuthManagers;
 using Backend.BusinessLogic.AuthManagers.Contracts;
 using Backend.DataAccess;
 using Backend.Domain;
@@ -13,12 +15,17 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
         private readonly DatabaseContext _databaseContext;
         private readonly IMapper _mapper;
         private readonly IHashManager _hashManager;
+        private readonly IValidationManager _validationManager;
 
-        public UsersRepository(DatabaseContext databaseContext, IMapper mapper, IHashManager hashManager)
+        public UsersRepository(DatabaseContext databaseContext, 
+                                        IMapper mapper,
+                                        IHashManager hashManager,
+                                        IValidationManager validationManager)
         {
             _databaseContext = databaseContext;
             _mapper = mapper;
             _hashManager = hashManager;
+            _validationManager = validationManager;
         }
 
         public async Task<List<SimpleUserModel>> GetAllUsers()
@@ -46,34 +53,62 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
 
         public async Task<ServiceResponse<UserModel>> RegisterUser(CreateUserModel model)
         {
-            var response = new ServiceResponse<UserModel>();
+            
             var hasAnyByEmail = await UserByEmailExists(model.Email);
 
             if (hasAnyByEmail)
             {
-                response.IsSuccess = false;
-                response.Message = "The user with this email already exists.";
-                response.Data = null;
-            }
-            else
-            {
-                var hashModel = _hashManager.Generate(model.Password);
-                var user = new User
+                return new ServiceResponse<UserModel>()
                 {
-                    FirstName = model.FirstName,
-                    LastName = model.LastName,
-                    Email = model.Email,
-                    PasswordHash = Convert.ToBase64String(hashModel.Hash),
-                    SaltHash = Convert.ToBase64String(hashModel.Salt),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    IsSuccess = false,
+                    Message = "The user with this email already exists.",
+                    Data = null
                 };
-
-                await _databaseContext.Users.AddAsync(user);
-                await _databaseContext.SaveChangesAsync();
-
-                response.Data = await GetUserById(user.Id);
             }
-            return response;
+
+            var isPasswordValid = _validationManager.ValidatePassword(model.Password);
+
+            if (!isPasswordValid)
+            {
+                return new ServiceResponse<UserModel>()
+                {
+                    IsSuccess = false,
+                    Message = "Your password is not valid. Make sure it is at lest 8 characters long and contains one uppercase letter, one lowercase letter, one number and one special character ('@', '#', '$', '%', '^', '&', '+', '=', '!', '?').",
+                    Data = null
+                };
+            }
+
+            var isUserEmailValid = _validationManager.ValidateEmail(model.Email);
+
+            if (!isUserEmailValid)
+            {
+                return new ServiceResponse<UserModel>()
+                {
+                    IsSuccess = false,
+                    Message = "Your email is not valid. Please, check it for correctness.",
+                    Data = null
+                };
+            }
+            var hashModel = _hashManager.Generate(model.Password);
+            var user = new User
+            {
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Email = model.Email,
+                PasswordHash = Convert.ToBase64String(hashModel.Hash),
+                SaltHash = Convert.ToBase64String(hashModel.Salt),
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            await _databaseContext.Users.AddAsync(user);
+            await _databaseContext.SaveChangesAsync();
+
+            return new ServiceResponse<UserModel>()
+            {
+                IsSuccess = true,
+                Message = "User successfully registered.",
+                Data = await GetUserById(user.Id)
+            };
         }
 
         public async Task<bool> UserByEmailExists(string email)

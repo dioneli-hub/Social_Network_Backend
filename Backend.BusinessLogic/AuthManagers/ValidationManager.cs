@@ -1,34 +1,15 @@
 ﻿using Backend.BusinessLogic.AuthManagers.Contracts;
-using Backend.DataAccess;
-using Backend.Domain;
-using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.Net.Mail;
 
 namespace Backend.BusinessLogic.AuthManagers
 {
-    public class PasswordManager : IPasswordManager
+    public class ValidationManager : IValidationManager
     {
-        private readonly DatabaseContext _database;
-        private readonly IHashManager _hashManager;
-
-        public PasswordManager(DatabaseContext database, IHashManager hashManager)
+        public bool ValidateEmail(string email)
         {
-            _database = database;
-            _hashManager = hashManager;
-        }
-
-        public async Task<bool> Verify(int userId, string password)
-        {
-            var user = await _database.Users.FirstOrDefaultAsync(x => x.Id == userId);
-            return Verify(user, password);
-        }
-
-        private bool Verify(User user, string password)
-        {
-            var salt = Convert.FromBase64String(user.SaltHash);
-            var hash = _hashManager.HashPassword(password, salt);
-            var hashedPasswordAsBase64String = Convert.ToBase64String(hash);
-
-            return user.PasswordHash == hashedPasswordAsBase64String;
+            var emailValidation = new EmailAddressAttribute();
+            return emailValidation.IsValid(email);
         }
 
         public bool ValidatePassword(string password)
@@ -70,5 +51,6 @@ namespace Backend.BusinessLogic.AuthManagers
 
             return true;
         }
+    
     }
 }

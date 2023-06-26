@@ -3,7 +3,6 @@ using Backend.BusinessLogic.AuthManagers;
 using Backend.BusinessLogic.Repositories.AuthRepository;
 using Backend.BusinessLogic.Repositories.PostsRepository;
 using Backend.BusinessLogic.Repositories.UsersRepository;
-using Backend.BusinessLogic.UserContext;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.BusinessLogic
@@ -18,6 +17,7 @@ namespace Backend.BusinessLogic
             services.AddScoped<IJwtManager, JwtManager>();
             services.AddScoped<IHashManager, HashManager>();
             services.AddScoped<IPasswordManager, PasswordManager>();
+            services.AddScoped<IValidationManager, ValidationManager>();
 
             return services;
         }
