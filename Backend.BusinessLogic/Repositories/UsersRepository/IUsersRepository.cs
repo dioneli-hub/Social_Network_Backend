@@ -16,7 +16,7 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
         Task<UserModel> GetUserById(int userId);
         Task<bool> UserByEmailExists(string email);
         Task<bool> UserByIdExists(int userId);
-        Task<UserModel> RegisterUser(CreateUserModel model);
+        Task<ServiceResponse<UserModel>> RegisterUser(CreateUserModel model);
         Task<List<PostModel>> GetUserPosts(int userId);
         Task<List<SimpleUserModel>> GetUserFollowers(int userId, int? limit);
         Task<List<SimpleUserModel>> GetUserFollowsTo(int userId, int? limit);

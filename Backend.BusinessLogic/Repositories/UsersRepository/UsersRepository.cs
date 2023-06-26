@@ -52,8 +52,19 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
             return userModel;
         }
 
-        public async Task<UserModel> RegisterUser(CreateUserModel model)
+        public async Task<ServiceResponse<UserModel>> RegisterUser(CreateUserModel model)
         {
+            var response = new ServiceResponse<UserModel>();
+            var hasAnyByEmail = await UserByEmailExists(model.Email);
+
+            if (hasAnyByEmail)
+            {
+                response.IsSuccess = false;
+                response.Message = "The user with this email already exists.";
+                response.Data = null;
+            }
+            else
+            {
                 var hashModel = _hashManager.Generate(model.Password);
                 var user = new User
                 {
@@ -67,10 +78,10 @@ namespace Backend.BusinessLogic.Repositories.UsersRepository
 
                 await _databaseContext.Users.AddAsync(user);
                 await _databaseContext.SaveChangesAsync();
-            
-                var createdUserModel = await GetUserById(user.Id);
-            
-            return createdUserModel;
+
+                response.Data = await GetUserById(user.Id);
+            }
+            return response;
         }
 
         public async Task<bool> UserByEmailExists(string email)

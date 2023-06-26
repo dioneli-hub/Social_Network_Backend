@@ -39,13 +39,6 @@ namespace Backend.Api.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<UserModel>> RegisterUser(CreateUserModel model)
         {
-            var hasAnyByEmail = await _usersRepository.UserByEmailExists(model.Email);
-                
-            if (hasAnyByEmail)
-            {
-                return BadRequest();
-            } 
-
             var createdUserModel = await _usersRepository.RegisterUser(model);
             return Ok(createdUserModel);
         }
