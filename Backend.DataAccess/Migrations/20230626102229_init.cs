@@ -6,7 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Backend.DataAccess.Migrations
 {
     /// <inheritdoc />
+<<<<<<<< HEAD:Backend.DataAccess/Migrations/20230626102229_init.cs
     public partial class init : Migration
+========
+    public partial class Ini : Migration
+>>>>>>>> 82c0cce09767de172928494a0f035a6e85693c1a:Backend.DataAccess/Migrations/20230625062031_Ini.cs
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

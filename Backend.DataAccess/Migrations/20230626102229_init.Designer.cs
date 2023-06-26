@@ -12,8 +12,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.DataAccess.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
+<<<<<<<< HEAD:Backend.DataAccess/Migrations/20230626102229_init.Designer.cs
     [Migration("20230626102229_init")]
     partial class init
+========
+    [Migration("20230625062031_Ini")]
+    partial class Ini
+>>>>>>>> 82c0cce09767de172928494a0f035a6e85693c1a:Backend.DataAccess/Migrations/20230625062031_Ini.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

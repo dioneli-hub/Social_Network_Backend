@@ -18,9 +18,8 @@ namespace Backend.BusinessLogic.Repositories.PostsRepository
             _mapper = mapper;
             _database = database;
         }
-        public async Task<ServiceResponse<List<PostModel>>> GetNews(int currentUserId)
+        public async Task<List<PostModel>> GetNews(int currentUserId)
         {
-            var response = new ServiceResponse<List<PostModel>>();
             var news = await _database.Users
                 .Where(x => x.Id == currentUserId)
                 .SelectMany(x => x.UserFollowsTo.SelectMany(f => f.User.Posts))
@@ -40,13 +39,11 @@ namespace Backend.BusinessLogic.Repositories.PostsRepository
                 })
                 .ToListAsync();
 
-            response.Data = news;
-            return response;
+            return news;
         }
 
-        public async Task<ServiceResponse<int>> CreatePost(CreatePostModel model, int currentUserId)
+        public async Task<PostModel> CreatePost(CreatePostModel model, int currentUserId)
         {
-            var response = new ServiceResponse<int>();
             var post = new Post
             {
                 Text = model.Text,
@@ -57,41 +54,25 @@ namespace Backend.BusinessLogic.Repositories.PostsRepository
             _database.Posts.Add(post);
             await _database.SaveChangesAsync();
 
-            var postModelResponse = await GetPostById(post.Id);
-
-            response.Data = postModelResponse.Data.Id;
-            return response;
+            var postModel = await GetPostById(post.Id);
+            return postModel;
         }
 
-        public async Task<ServiceResponse<bool>> RemovePost(int postId)
+        public async Task RemovePost(int postId)
         {
-            var response = new ServiceResponse<bool>();
             var post = await _database.Posts
                 .Include(x => x.Comments)
                 .Include(x => x.Likes)
                 .FirstOrDefaultAsync(x => x.Id == postId);
 
-            if (post == null)
-            {
-                response.Data = false;
-                response.IsSuccess = false;
-                response.Message = "Post not found.";
-            }
-            else
-            {
                 _database.PostComments.RemoveRange(post.Comments);
                 _database.PostLikes.RemoveRange(post.Likes);
                 _database.Posts.Remove(post);
                 await _database.SaveChangesAsync();
-
-                response.Data = true;
-            }
-            return response;
         }
 
-        public async Task<ServiceResponse<PostModel>> GetPostById(int postId)
+        public async Task<PostModel> GetPostById(int postId)
         {
-            var response = new ServiceResponse<PostModel>();
             var post = await _database.Posts
                 .Include(x => x.Author)
                 .ThenInclude(x => x.Avatar)
@@ -100,13 +81,11 @@ namespace Backend.BusinessLogic.Repositories.PostsRepository
                 .FirstOrDefaultAsync(x => x.Id == postId);
             var postModel = _mapper.Map<PostModel>(post);
 
-            response.Data = postModel;
-            return response;
+            return postModel;
         }
 
-        public async Task<ServiceResponse<List<PostCommentModel>>> GetPostComments(int postId)
+        public async Task<List<PostCommentModel>> GetPostComments(int postId)
         {
-            var response = new ServiceResponse<List<PostCommentModel>>();
             var comments = await _database.PostComments
                 .Include(x => x.Author)
                 .Where(x => x.PostId == postId)
@@ -114,24 +93,23 @@ namespace Backend.BusinessLogic.Repositories.PostsRepository
                 .ToListAsync();
             var commentsModel = _mapper.Map<List<PostCommentModel>>(comments);
 
-            response.Data = commentsModel;
-            response.IsSuccess = true;
-            response.Message = "Success.";
-
-            return response;
+            return commentsModel;
         }
 
-        public async Task<ServiceResponse<PostCommentModel>> AddCommentToPost(AddCommentToPostModel addCommentToPostModel, int postId, int currentUserId)
+        public async Task<PostCommentModel> GetPostCommentById(int postId, int commentId)
         {
-            var response = new ServiceResponse<PostCommentModel>();
-            var hasPost = await _database.Posts.AnyAsync(x => x.Id == postId);
+            var comment = await _database.PostComments
+                .Include(x => x.Author)
+                .Where(x => x.PostId == postId)
+                .FirstOrDefaultAsync(x => x.Id == commentId);
 
-            if (!hasPost)
-            {
-                response.IsSuccess = false;
-                response.Message = "Post not found.";
-            }
+            var commentModel = _mapper.Map<PostCommentModel>(comment);
 
+            return commentModel;
+        }
+
+        public async Task<PostCommentModel> AddCommentToPost(AddCommentToPostModel addCommentToPostModel, int postId, int currentUserId)
+        {
             var comment = new PostComment
             {
                 AuthorId = currentUserId,
@@ -147,63 +125,53 @@ namespace Backend.BusinessLogic.Repositories.PostsRepository
                 .Include(x => x.Author)
                 .FirstAsync();
 
-            response.Data = _mapper.Map<PostCommentModel>(returnedComment);
+            var returnedCommentModel = _mapper.Map<PostCommentModel>(returnedComment);
 
-            return response;
+            return returnedCommentModel;
         }
 
-        public async Task<ServiceResponse<PostComment>> RemoveCommentFromPost(int commentId, int postId, int currentUserId)
+        public async Task<bool> PostExists(int postId)
         {
-            var response = new ServiceResponse<PostComment>();
-            var comment = await _database.PostComments.FirstOrDefaultAsync(x => x.Id == commentId);
-            if (comment == null)
-            {
-                response.IsSuccess = false;
-                response.Message = "Comment not found.";
-            }
+            var hasPost = await _database.Posts.AnyAsync(x => x.Id == postId);
+            return hasPost;
+        }
 
-            else if (comment.PostId != postId || comment.AuthorId != currentUserId)
-            {
-                response.IsSuccess = false;
-                response.Message = "Restricted.";
-            }
-            else
-            {
+        public async Task RemoveCommentFromPost(int commentId, int postId, int currentUserId)
+        {
+            var comment = await _database.PostComments.FirstOrDefaultAsync(x => x.Id == commentId);
+
                 _database.PostComments.Remove(comment);
                 await _database.SaveChangesAsync();
-                response.IsSuccess = true;
-            }
-            return response;
         }
 
-        public async Task<ServiceResponse<List<PostLikeModel>>> GetPostLikes(int postId)
+        public async Task<List<PostLikeModel>> GetPostLikes(int postId)
         {
-            var response = new ServiceResponse<List<PostLikeModel>>();
-
             var likes = await _database.PostLikes
                 .Include(x => x.User)
                 .Where(x => x.PostId == postId)
                 .ToListAsync();
 
             var likeModels = _mapper.Map<List<PostLikeModel>>(likes);
-            response.Data = likeModels;
 
-            return response;
+            return likeModels;
         }
 
-        public async Task<ServiceResponse<PostLikeModel>> AddLikeToPost(int postId, int currentUserId)
+        public async Task<PostLikeModel> GetPostLikeById(int postId, int currentUserId)
         {
-            var response = new ServiceResponse<PostLikeModel>();
-            var hasPost = await _database.Posts.AnyAsync(x => x.Id == postId);
-            if (!hasPost)
-            {
-                response.IsSuccess = false;
-                response.Message = "Post not found.";
-            }
+            var like = await _database.PostLikes
+                .Include(x => x.User)
+                .Where(x => x.PostId == postId && x.User.Id == currentUserId )
+                .FirstOrDefaultAsync();
 
+            var likeModel = _mapper.Map<PostLikeModel>(like);
+
+            return likeModel;
+        }
+
+        public async Task<PostLikeModel> AddLikeToPost(int postId, int currentUserId)
+        {
             var like = await _database.PostLikes.FirstOrDefaultAsync(x => x.PostId == postId && x.UserId == currentUserId);
-            if (like == null)
-            {
+
                 like = new PostLike
                 {
                     UserId = currentUserId,
@@ -212,36 +180,21 @@ namespace Backend.BusinessLogic.Repositories.PostsRepository
                 };
                 await _database.PostLikes.AddAsync(like);
                 await _database.SaveChangesAsync();
-            }
-
+            
             var returnedLike = _mapper.Map<PostLikeModel>(await _database.PostLikes
                 .Include(x => x.User)
                 .FirstOrDefaultAsync(x => x.PostId == postId && x.UserId == currentUserId));
 
-            response.Data = returnedLike;
-
-            return response;
+            return returnedLike;
         }
 
-        public async Task<ServiceResponse<PostLike>> RemoveLikeFromPost(int postId, int currentUserId)
+        public async Task<PostLike> RemoveLikeFromPost(int postId, int currentUserId)
         {
-            var response = new ServiceResponse<PostLike>();
             var like = await _database.PostLikes.FirstOrDefaultAsync(x => x.PostId == postId && x.UserId == currentUserId);
-            if (like == null)
-            {
-                response.IsSuccess = false;
-                response.Message = "Not found.";
-            }
-            else
-            {
-                _database.PostLikes.Remove(like);
-                await _database.SaveChangesAsync();
 
-                response.IsSuccess = true;
-                response.Message = "Success!";
-                response.Data = like;
-            }
-            return response;
+            _database.PostLikes.Remove(like);
+            await _database.SaveChangesAsync();
+            return like;
         }
     }
 }
