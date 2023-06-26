@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Backend.ApiModels;
-using Backend.BusinessLogic.AuthManagers;
 using Backend.BusinessLogic.AuthManagers.Contracts;
-using Backend.BusinessLogic.UserContext;
 using Backend.DataAccess;
 using Backend.Domain;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.BusinessLogic.Repositories.UsersRepository

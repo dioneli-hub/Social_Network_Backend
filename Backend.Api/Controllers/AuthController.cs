@@ -30,18 +30,19 @@ namespace Backend.Api.Controllers
         {
             var currentUserId = _userContextService.GetCurrentUserId();
             var result = await _authRepository.GetAuthenticatedUser(currentUserId);
-            return Ok(result);
+            var user = result.Data;
+            return Ok(user);
         }
 
         [AllowAnonymous]
         [HttpPost(Name = nameof(Authenticate))]
-        public async Task<ActionResult<string>> Authenticate(AuthenticateModel model)
+        public async Task<ActionResult<ServiceResponse<TokenModel>>> Authenticate(AuthenticateModel model)
         {
             var response = await _authRepository.Authenticate(model.Email, model.Password);
-            if (!response.IsSuccess)
-            {
-                return BadRequest(response);
-            }
+            //if (!response.IsSuccess)
+            //{
+            //    return BadRequest(response);
+            //}
             return Ok(response);
         }
     }

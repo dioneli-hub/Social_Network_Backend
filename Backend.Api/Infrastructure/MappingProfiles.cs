@@ -10,7 +10,9 @@ namespace Backend.Api.Infrastructure
         {
             CreateMap<PostComment, PostCommentModel>();
             CreateMap<User , SimpleUserModel>();
-            CreateMap<User, UserModel>();
+            CreateMap<User, UserModel>()
+                .ForMember(dest => dest.TotalFollowers, opt => opt.MapFrom(src => src.UserFollowers.Count()))
+                .ForMember(dest => dest.TotalFollowsTo, opt => opt.MapFrom(src => src.UserFollowsTo.Count()));
             CreateMap<Post, PostModel>();
             CreateMap<PostComment, PostCommentModel>();
             CreateMap<PostLike, PostLikeModel>();

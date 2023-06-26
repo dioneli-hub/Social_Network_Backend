@@ -11,6 +11,6 @@ namespace Backend.BusinessLogic.Repositories.AuthRepository
     public interface IAuthRepository
     {
         Task<ServiceResponse<UserModel>> GetAuthenticatedUser(int currentUserId);
-        public Task<ServiceResponse<string>> Authenticate(string email, string password);
+        public Task<ServiceResponse<TokenModel>> Authenticate(string email, string password);
     }
 }

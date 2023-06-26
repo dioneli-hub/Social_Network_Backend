@@ -45,20 +45,20 @@ namespace Backend.BusinessLogic.Repositories.AuthRepository
             return response;
         }
 
-        public async Task<ServiceResponse<string>> Authenticate(string email, string password)
+        public async Task<ServiceResponse<TokenModel>> Authenticate(string email, string password)
         {
-            var response = new ServiceResponse<string>();
+            var response = new ServiceResponse<TokenModel>();
             var user = await _database.Users.FirstOrDefaultAsync(x => x.Email.ToLower() == email.ToLower());
 
             if (user == null)
             {
                 response.IsSuccess = false;
-                response.Message = "User is not found.";
+                response.Message = "User is not found. Please, check your email for correctness.";
             }
             else if (!await _passwordManager.Verify(user.Id, password))
             {
                 response.IsSuccess = false;
-                response.Message = "Wrong password.";
+                response.Message = "Wrong password. Please, enter again.";
             }
             else
             {

@@ -168,10 +168,32 @@ namespace Backend.BusinessLogic.Repositories.PostsRepository
             return likeModel;
         }
 
+        //public async Task<PostLikeModel> AddLikeToPost(int postId, int currentUserId)
+        //{
+        //    var like = await _database.PostLikes.FirstOrDefaultAsync(x => x.PostId == postId && x.UserId == currentUserId);
+
+        //        like = new PostLike
+        //        {
+        //            UserId = currentUserId,
+        //            PostId = postId,
+        //            LikedAt = DateTimeOffset.UtcNow
+        //        };
+        //        await _database.PostLikes.AddAsync(like);
+        //        await _database.SaveChangesAsync();
+
+        //    var returnedLike = _mapper.Map<PostLikeModel>(await _database.PostLikes
+        //        .Include(x => x.User)
+        //        .FirstOrDefaultAsync(x => x.PostId == postId && x.UserId == currentUserId));
+
+        //    return returnedLike;
+        //}
+
         public async Task<PostLikeModel> AddLikeToPost(int postId, int currentUserId)
         {
             var like = await _database.PostLikes.FirstOrDefaultAsync(x => x.PostId == postId && x.UserId == currentUserId);
 
+            if (like == null)
+            {
                 like = new PostLike
                 {
                     UserId = currentUserId,
@@ -180,12 +202,25 @@ namespace Backend.BusinessLogic.Repositories.PostsRepository
                 };
                 await _database.PostLikes.AddAsync(like);
                 await _database.SaveChangesAsync();
-            
-            var returnedLike = _mapper.Map<PostLikeModel>(await _database.PostLikes
-                .Include(x => x.User)
-                .FirstOrDefaultAsync(x => x.PostId == postId && x.UserId == currentUserId));
+            }
 
-            return returnedLike;
+            //var returnedLike = _mapper.Map<PostLikeModel>
+            //    (
+            //        await _database.PostLikes
+            //        .Include(x => x.User)
+            //        .FirstOrDefaultAsync(x => x.PostId == postId && x.UserId == currentUserId)
+            //    );
+
+            //return returnedLike;
+
+            like = await _database.PostLikes
+                           .Include(x => x.User)
+                           .FirstOrDefaultAsync(x => x.PostId == postId && x.UserId == currentUserId);
+
+            var likeModel = _mapper.Map<PostLikeModel>(like);
+
+            return likeModel;
+
         }
 
         public async Task<PostLike> RemoveLikeFromPost(int postId, int currentUserId)

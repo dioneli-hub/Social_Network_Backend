@@ -9,7 +9,7 @@ namespace Backend.BusinessLogic.AuthManagers
 {
     public class JwtManager : IJwtManager
     {
-        public string GenerateJwtToken(int userId)
+        public TokenModel GenerateJwtToken(int userId)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var nowUtc = DateTimeOffset.UtcNow;
@@ -23,7 +23,7 @@ namespace Backend.BusinessLogic.AuthManagers
                 ExpiredAt = expiresAt,
                 Token = token
             };
-            return result.Token;
+            return result;
         }
 
         public bool IsValidAuthToken(string token)

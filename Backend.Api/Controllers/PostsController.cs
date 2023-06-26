@@ -121,7 +121,7 @@ namespace Backend.Api.Controllers
         public async Task<ActionResult<PostLikeModel>> AddLikeToPost(int postId)
         {
             var currentUserId = _userContextService.GetCurrentUserId();
-            var like = await _postsRepository.GetPostLikeById(postId, currentUserId);
+            //var like = await _postsRepository.GetPostLikeById(postId, currentUserId);
 
             var hasPost = await _postsRepository.PostExists(postId);
             if (!hasPost)
@@ -129,19 +129,22 @@ namespace Backend.Api.Controllers
                 return NotFound();
             }
 
-            if (like == null)
-            {
-                await _postsRepository.AddLikeToPost(postId, currentUserId);
-            }
+            var like = await _postsRepository.AddLikeToPost(postId, currentUserId);
+
+            //if (like == null)
+            //{
+            //    await _postsRepository.AddLikeToPost(postId, currentUserId);
+            //}
 
             return Ok(like); 
         }
 
         [HttpDelete("{postId}/likes", Name = nameof(RemoveLikeFromPost))]
-        public async Task<ActionResult> RemoveLikeFromPost(int postId, int likeId)
+        public async Task<ActionResult> RemoveLikeFromPost(int postId)
         {
             var currentUserId = _userContextService.GetCurrentUserId();
-            var like = await _postsRepository.GetPostLikeById(postId, likeId);
+
+            var like = await _postsRepository.GetPostLikeById(postId, currentUserId);
             if (like == null)
             {
                 return NotFound();
